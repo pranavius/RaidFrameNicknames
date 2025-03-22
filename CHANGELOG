@@ -1,6 +1,5 @@
-v1.0.1
-Fixed /inc config command so the options window opens correctly
-Metadata updates
+v0.0.2
+Rename AddOn and update references to reflect new name
 
-v1.0.0
-Initial release with updated features for hiding name in chat messages
+v0.0.1
+Initial build and test

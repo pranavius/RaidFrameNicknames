@@ -1,7 +1,7 @@
-local addonName = "Unit Frame Nicknames"
+local addonName = "Raid Frame Nicknames"
 
 -- Module
-UnitFrameNicknames = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
+RaidFrameNicknames = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
 
 -- Localization
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
@@ -21,8 +21,8 @@ local Options = {
             name = L["debug"],
             desc= L["debug_desc"],
             order = 1,
-            get = function(item) return UnitFrameNicknames.db.profile[item[#item]] end,
-            set = function(item, val) UnitFrameNicknames.db.profile[item[#item]] = val end
+            get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
+            set = function(item, val) RaidFrameNicknames.db.profile[item[#item]] = val end
         },
         newEntryHeader = {
             type = "header",
@@ -33,30 +33,30 @@ local Options = {
             type = "input",
             name = L["char_name"],
             order = 3,
-            get = function() return UnitFrameNicknames.newChar or "" end,
-            set = function(_, val) UnitFrameNicknames.newChar = val end
+            get = function() return RaidFrameNicknames.newChar or "" end,
+            set = function(_, val) RaidFrameNicknames.newChar = val end
         },
         nicknameInput = {
             type = "input",
             name = L["nickname"],
             order = 4,
-            get = function() return UnitFrameNicknames.newNick or "" end,
-            set = function(_, val) UnitFrameNicknames.newNick = val end
+            get = function() return RaidFrameNicknames.newNick or "" end,
+            set = function(_, val) RaidFrameNicknames.newNick = val end
         },
         addButton = {
             type = "execute",
             name = L["add"],
             order = 5,
             func = function()
-                local char = UnitFrameNicknames.newChar
-                local nn = UnitFrameNicknames.newNick
+                local char = RaidFrameNicknames.newChar
+                local nn = RaidFrameNicknames.newNick
                 if char and char ~= "" and nn and nn ~= "" then
-                    UnitFrameNicknames.db.profile.nicknames[char] = nn
-                    UnitFrameNicknames.newChar = ""
-                    UnitFrameNicknames.newNick = ""
-                    UnitFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nn .. "|r.")
-                    UnitFrameNicknames:BuildNicknameEntryList()
-                    UnitFrameNicknames:UpdateRaidNamesIfSafe()
+                    RaidFrameNicknames.db.profile.nicknames[char] = nn
+                    RaidFrameNicknames.newChar = ""
+                    RaidFrameNicknames.newNick = ""
+                    RaidFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nn .. "|r.")
+                    RaidFrameNicknames:BuildNicknameEntryList()
+                    RaidFrameNicknames:UpdateRaidNamesIfSafe()
                 end
             end
         },
@@ -89,9 +89,9 @@ local Defaults = {
 
 local SlashOptions = {
 	type = "group",
-	handler = UnitFrameNicknames,
-	get = function(item) return UnitFrameNicknames.db.profile[item[#item]] end,
-	set = function(item, value) UnitFrameNicknames.db.profile[item[#item]] = value end,
+	handler = RaidFrameNicknames,
+	get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
+	set = function(item, value) RaidFrameNicknames.db.profile[item[#item]] = value end,
 	args = {
         debug = {
             type = "toggle",
@@ -112,9 +112,9 @@ local SlashOptions = {
 local SlashCmds = { "ufn" }
 
 -- Initialization
-function UnitFrameNicknames:OnInitialize()
+function RaidFrameNicknames:OnInitialize()
     -- Load database
-	self.db = LibStub("AceDB-3.0"):New("UnitFrameNicknamesDB", Defaults, "Default")
+	self.db = LibStub("AceDB-3.0"):New("RaidFrameNicknamesDB", Defaults, "Default")
 
     -- Setup config options
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
@@ -122,10 +122,10 @@ function UnitFrameNicknames:OnInitialize()
     local registry = LibStub("AceConfigRegistry-3.0")
 
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
-    registry:RegisterOptionsTable("Unit Frame Nicknames Options", Options)
-	registry:RegisterOptionsTable("Unit Frame Nicknames Profiles", profiles)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Unit Frame Nicknames Options", addonName)
-	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Unit Frame Nicknames Profiles", "Profiles", addonName);
+    registry:RegisterOptionsTable("Raid Frame Nicknames Options", Options)
+	registry:RegisterOptionsTable("Raid Frame Nicknames Profiles", profiles)
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Options", addonName)
+	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Profiles", "Profiles", addonName);
 
     self:BuildNicknameEntryList()
 
@@ -149,13 +149,13 @@ function UnitFrameNicknames:OnInitialize()
 end
 
 -- Functions
-function UnitFrameNicknames:Debug_Print(msg)
+function RaidFrameNicknames:Debug_Print(msg)
     if self.db.profile.debug then
 		self:Print("|cFF00ccff[Debug] |r " .. msg)
 	end
 end
 
-function UnitFrameNicknames:BuildNicknameEntryList()
+function RaidFrameNicknames:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
     local t = Options.args.entryList.args
     wipe(t) -- Clean old UI nickname entries
@@ -182,9 +182,9 @@ function UnitFrameNicknames:BuildNicknameEntryList()
             width = "half",
             order = i * 10 + 1,
             func = function()
-                UnitFrameNicknames.newChar = char
-                UnitFrameNicknames.newNick = nick
-                UnitFrameNicknames.db.profile.nicknames[char] = nil
+                RaidFrameNicknames.newChar = char
+                RaidFrameNicknames.newNick = nick
+                RaidFrameNicknames.db.profile.nicknames[char] = nil
                 self:Debug_Print("|cFFe6cc80Editing entry for character: |r" .. char)
             end
         }
@@ -194,7 +194,7 @@ function UnitFrameNicknames:BuildNicknameEntryList()
             width = "half",
             order = i * 10 + 2,
             func = function()
-                UnitFrameNicknames.db.profile.nicknames[char] = nil
+                RaidFrameNicknames.db.profile.nicknames[char] = nil
                 self:Debug_Print("|cFFc41e3aDeleted entry for character:|r |cFF9d9d9d" .. char .. "|r")
                 self:BuildNicknameEntryList()
                 self:UpdateRaidNamesIfSafe()
@@ -204,7 +204,7 @@ function UnitFrameNicknames:BuildNicknameEntryList()
     end
 end
 
-function UnitFrameNicknames:UpdateRaidNamesIfSafe()
+function RaidFrameNicknames:UpdateRaidNamesIfSafe()
     if not InCombatLockdown() then
         self:Debug_Print("Out of combat")
         self:UpdateRaidNames()
@@ -215,13 +215,13 @@ function UnitFrameNicknames:UpdateRaidNamesIfSafe()
     end
 end
 
-function UnitFrameNicknames:PLAYER_REGEN_ENABLED()
+function RaidFrameNicknames:PLAYER_REGEN_ENABLED()
     self:Debug_Print("Exited combat")
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
     self:UpdateRaidNames()
 end
 
-function UnitFrameNicknames:UpdateRaidNames()
+function RaidFrameNicknames:UpdateRaidNames()
     self:Debug_Print("Updating party/raid nicknames")
     local nicknames = self.db.profile.nicknames
 

@@ -1,4 +1,4 @@
-local L = LibStub("AceLocale-3.0"):NewLocale("Unit Frame Nicknames", "enUS", true)
+local L = LibStub("AceLocale-3.0"):NewLocale("Raid Frame Nicknames", "enUS", true)
 
 if not L then return end
 
