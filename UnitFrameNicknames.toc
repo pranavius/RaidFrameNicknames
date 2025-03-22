@@ -1,0 +1,17 @@
+## Interface: 110100
+## Title: Unit Frame Nicknames
+## Notes: Assign nicknames to players when you are in a party or raid with them
+## Author: pranavius
+## Version: 0.0.1
+## SavedVariables: UnitFrameNicknamesDB
+## X-Flavor: retail
+## X-Category: 
+## X-Localizations: enUS
+## X-AddOn-Provider: github
+## X-Curse-Project-ID: 
+## X-License: GNU General Public License
+
+embeds.xml
+
+i18n\enUS.lua
+UnitFrameNicknames.lua
