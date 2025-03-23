@@ -29,19 +29,19 @@ local Options = {
             name = L["add_new_entry"],
             order = 2,
         },
-        characterInput = {
-            type = "input",
-            name = L["char_name"],
-            order = 3,
-            get = function() return RaidFrameNicknames.newChar or "" end,
-            set = function(_, val) RaidFrameNicknames.newChar = val end
-        },
         nicknameInput = {
             type = "input",
             name = L["nickname"],
-            order = 4,
+            order = 3,
             get = function() return RaidFrameNicknames.newNick or "" end,
             set = function(_, val) RaidFrameNicknames.newNick = val end
+        },
+        characterInput = {
+            type = "input",
+            name = L["char_name"],
+            order = 4,
+            get = function() return RaidFrameNicknames.newChar or "" end,
+            set = function(_, val) RaidFrameNicknames.newChar = val end
         },
         addButton = {
             type = "execute",
@@ -49,12 +49,21 @@ local Options = {
             order = 5,
             func = function()
                 local char = RaidFrameNicknames.newChar
-                local nn = RaidFrameNicknames.newNick
-                if char and char ~= "" and nn and nn ~= "" then
-                    RaidFrameNicknames.db.profile.nicknames[char] = nn
-                    RaidFrameNicknames.newChar = ""
+                local nick = RaidFrameNicknames.newNick
+                if char and char ~= "" and nick and nick ~= "" then
+                    RaidFrameNicknames.db.profile.nicknames[nick] = RaidFrameNicknames.db.profile.nicknames[nick] or {}
+                    -- Avoid duplicates
+                    -- TODO: Avoid duplicates across any nicknames
+                    for name, _ in ipairs(RaidFrameNicknames.db.profile.nicknames[nick]) do
+                        if name == char then
+                            RaidFrameNicknames:Print("Character |cFF1eff00" .. char .. "|r already exists for this nickname")
+                            return
+                        end
+                    end
+                    RaidFrameNicknames.db.profile.nicknames[nick][char] = true
                     RaidFrameNicknames.newNick = ""
-                    RaidFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nn .. "|r.")
+                    RaidFrameNicknames.newChar = ""
+                    RaidFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nick .. "|r.")
                     RaidFrameNicknames:BuildNicknameEntryList()
                     RaidFrameNicknames:UpdateRaidNamesIfSafe()
                 end
@@ -109,7 +118,7 @@ local SlashOptions = {
 	},
 }
 
-local SlashCmds = { "ufn" }
+local SlashCmds = { "rfn" }
 
 -- Initialization
 function RaidFrameNicknames:OnInitialize()
@@ -135,14 +144,11 @@ function RaidFrameNicknames:OnInitialize()
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateRaidNamesIfSafe")
 
     hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
-        if not frame or not frame.unit or not UnitExists(frame.unit) then return end
-    
-        local name = UnitName(frame.unit, true)
-        local nickname = self.db.profile.nicknames[name]
-    
-        if nickname and frame.name and nickname ~= frame.name then
-            frame.name:SetText(nickname)
+        if not frame or not frame.unit or not UnitExists(frame.unit) then
+            self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
+            return    
         end
+        self:UpdateRaidNamesIfSafe()
     end)
 
     self:Debug_Print("Loaded")
@@ -157,57 +163,100 @@ end
 
 function RaidFrameNicknames:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
-    local t = Options.args.entryList.args
-    wipe(t) -- Clean old UI nickname entries
-
-    local data = self.db.profile.nicknames or {}
-    if not data then
-        self:Debug_Print("|cFFc41e3aDatabase not found|r")
+    local entryList = Options.args.entryList
+    if not entryList then
+        self:Debug_Print("|cFFc41e3aNicknames entry list option not found|r")
         return
     end
 
-    local i = 1
-    for char, nick in pairs(data) do
-        self:Debug_Print("character: " .. char .. " with nickname: " .. nick) -- Remove after testing
-        local key = "entry" .. i
-        t[key .. "_value"] = {
-            type = "description",
-            name = char .. " -> " .. nick,
-            width = "double",
-            order = i * 10,
+    entryList.args = {}
+    local args = entryList.args
+    local nicknames = self.db.profile.nicknames
+    local nicknameOrder = 1
+
+    -- Add each nickname group
+    for nickname, characters in pairs(nicknames) do
+        local nicknameKey = "group_" .. nickname
+        args[nicknameKey] = {
+            type = "group",
+            name = nickname,
+            inline = false,
+            order = nicknameOrder,
+            args = {}
         }
-        t[key .. "_edit"] = {
-            type = "execute",
-            name = L["edit"],
-            width = "half",
-            order = i * 10 + 1,
-            func = function()
-                RaidFrameNicknames.newChar = char
-                RaidFrameNicknames.newNick = nick
-                RaidFrameNicknames.db.profile.nicknames[char] = nil
-                self:Debug_Print("|cFFe6cc80Editing entry for character: |r" .. char)
-            end
+
+        local groupArgs = args[nicknameKey].args
+        local charOrder = 1
+
+        -- Character list under this nickname
+        for character, _ in pairs(characters) do
+            groupArgs["char_" .. character] = {
+                type = "group",
+                name = "",
+                inline = true,
+                order = charOrder,
+                args = {
+                    label = {
+                        type = "description",
+                        name = character,
+                        width = "double",
+                        order = 1,
+                    },
+                    delete = {
+                        type = "execute",
+                        name = L["delete"],
+                        order = 2,
+                        func = function()
+                            nicknames[nickname][character] = nil
+                            -- If there are no other characters associated with the nickname, delete the nickname itself
+                            if not next(nicknames[nickname]) then
+                                nicknames[nickname] = nil
+                            end
+                            self:BuildNicknameEntryList()
+                        end,
+                    }
+                }
+            }
+            charOrder = charOrder + 1
+        end
+
+        -- Input to add a new character to this nickname
+        groupArgs["addChar_" .. nickname] = {
+            type = "input",
+            name = L["add_to_nickname"],
+            order = charOrder + 1,
+            set = function(_, val)
+                -- strtrim is a Blizzard-provided global utility function
+                val = strtrim(val)
+                if val ~= "" then
+                    nicknames[nickname][val] = true
+                    self:BuildNicknameEntryList()
+                end
+            end,
+            get = function() return "" end,
         }
-        t[key .. "_delete"] = {
+
+        -- Delete the whole nickname
+        groupArgs["deleteNick_" .. nickname] = {
             type = "execute",
-            name = L["delete"],
-            width = "half",
-            order = i * 10 + 2,
+            name = L["delete_nickname"],
+            order = charOrder + 2,
             func = function()
-                RaidFrameNicknames.db.profile.nicknames[char] = nil
-                self:Debug_Print("|cFFc41e3aDeleted entry for character:|r |cFF9d9d9d" .. char .. "|r")
+                nicknames[nickname] = nil
                 self:BuildNicknameEntryList()
-                self:UpdateRaidNamesIfSafe()
-            end
+            end,
         }
-        i = i + 1
+
+        nicknameOrder = nicknameOrder + 1
     end
 end
 
 function RaidFrameNicknames:UpdateRaidNamesIfSafe()
     if not InCombatLockdown() then
         self:Debug_Print("Out of combat")
-        self:UpdateRaidNames()
+        C_Timer.After(2, function()
+            self:UpdateRaidNames()
+        end)
     else
         -- Delay update until combat ends
         self:Debug_Print("Currently in combat. Frame updates will trigger upon exiting.")
@@ -218,7 +267,9 @@ end
 function RaidFrameNicknames:PLAYER_REGEN_ENABLED()
     self:Debug_Print("Exited combat")
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-    self:UpdateRaidNames()
+    C_Timer.After(2, function()
+        self:UpdateRaidNames()
+    end)
 end
 
 function RaidFrameNicknames:UpdateRaidNames()
@@ -226,16 +277,21 @@ function RaidFrameNicknames:UpdateRaidNames()
     local nicknames = self.db.profile.nicknames
 
     if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
-        self:Debug_Print("CompactRaidFrameContainer object or ApplyToFrames method not found")
+        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer|r |cFFc41e3aobject or|r |cFF00ccffApplyToFrames|r |cFFc41e3amethod not found|r")
         return
     end
 
     CompactRaidFrameContainer:ApplyToFrames("normal", function(frame)
         if frame and frame.unit and UnitExists(frame.unit) then
-            local name = UnitName(frame.unit)
-            local nickname = nicknames[name]
-            if nickname and nickname ~= name then
-                frame.name:SetText(nickname)
+            local unitName = UnitName(frame.unit)
+            for nickname, chars in pairs(nicknames) do
+                for char, _ in pairs(chars) do
+                    if char and char == unitName then
+                        self:Debug_Print("Setting unitName cFF1eff00" .. unitName .. "|r to nickname cFF1eff00" .. nickname .. "|r")
+                        frame.name:SetText(nickname)
+                        break
+                    end
+                end
             end
         end
     end)

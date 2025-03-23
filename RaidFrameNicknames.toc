@@ -5,10 +5,10 @@
 ## Version: 0.0.2
 ## SavedVariables: RaidFrameNicknamesDB
 ## X-Flavor: retail
-## X-Category: 
+## X-Category: Raid Frames
 ## X-Localizations: enUS
 ## X-AddOn-Provider: github
-## X-Curse-Project-ID: 
+## X-Curse-Project-ID: 1225449
 ## X-License: GNU General Public License
 
 embeds.xml
