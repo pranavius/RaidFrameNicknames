@@ -144,11 +144,13 @@ function RaidFrameNicknames:OnInitialize()
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateRaidNamesIfSafe")
 
     hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
-        if not frame or not frame.unit or not UnitExists(frame.unit) then
-            self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
-            return    
+        if self:IsGroupedUp() then
+            if not frame or not frame.unit or not UnitExists(frame.unit) then
+                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
+                return    
+            end
+            self:UpdateRaidNamesIfSafe()
         end
-        self:UpdateRaidNamesIfSafe()
     end)
 
     self:Debug_Print("Loaded")
@@ -159,6 +161,10 @@ function RaidFrameNicknames:Debug_Print(msg)
     if self.db.profile.debug then
 		self:Print("|cFF00ccff[Debug] |r " .. msg)
 	end
+end
+
+function RaidFrameNicknames:IsGroupedUp()
+    return IsInGroup() or IsInRaid()
 end
 
 function RaidFrameNicknames:BuildNicknameEntryList()
@@ -188,13 +194,24 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         local groupArgs = args[nicknameKey].args
         local charOrder = 1
 
+         -- Delete the whole nickname
+         groupArgs["deleteNick_" .. nickname] = {
+            type = "execute",
+            name = L["delete_nickname"],
+            order = charOrder,
+            func = function()
+                nicknames[nickname] = nil
+                self:BuildNicknameEntryList()
+            end,
+        }
+
         -- Character list under this nickname
         for character, _ in pairs(characters) do
             groupArgs["char_" .. character] = {
                 type = "group",
                 name = "",
                 inline = true,
-                order = charOrder,
+                order = charOrder + 1,
                 args = {
                     label = {
                         type = "description",
@@ -224,7 +241,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         groupArgs["addChar_" .. nickname] = {
             type = "input",
             name = L["add_to_nickname"],
-            order = charOrder + 1,
+            order = charOrder + 2,
             set = function(_, val)
                 -- strtrim is a Blizzard-provided global utility function
                 val = strtrim(val)
@@ -236,40 +253,31 @@ function RaidFrameNicknames:BuildNicknameEntryList()
             get = function() return "" end,
         }
 
-        -- Delete the whole nickname
-        groupArgs["deleteNick_" .. nickname] = {
-            type = "execute",
-            name = L["delete_nickname"],
-            order = charOrder + 2,
-            func = function()
-                nicknames[nickname] = nil
-                self:BuildNicknameEntryList()
-            end,
-        }
-
         nicknameOrder = nicknameOrder + 1
     end
 end
 
 function RaidFrameNicknames:UpdateRaidNamesIfSafe()
-    if not InCombatLockdown() then
-        self:Debug_Print("Out of combat")
-        C_Timer.After(2, function()
+    if self:IsGroupedUp() and not InCombatLockdown() then
+        C_Timer.After(0.5, function()
+            self:Debug_Print("In group/raid and out of combat")
             self:UpdateRaidNames()
         end)
-    else
+    elseif self:IsGroupedUp() then
         -- Delay update until combat ends
-        self:Debug_Print("Currently in combat. Frame updates will trigger upon exiting.")
+        self:Debug_Print("In group/raid, but currently in combat. Frame updates will trigger upon exiting.")
         self:RegisterEvent("PLAYER_REGEN_ENABLED")
     end
 end
 
 function RaidFrameNicknames:PLAYER_REGEN_ENABLED()
-    self:Debug_Print("Exited combat")
-    self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-    C_Timer.After(2, function()
-        self:UpdateRaidNames()
-    end)
+    if self:IsGroupedUp() then
+        self:Debug_Print("In group/raid and exited combat")
+        self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+        C_Timer.After(0.5, function()
+            self:UpdateRaidNames()
+        end)
+    end
 end
 
 function RaidFrameNicknames:UpdateRaidNames()
@@ -286,8 +294,8 @@ function RaidFrameNicknames:UpdateRaidNames()
             local unitName = UnitName(frame.unit)
             for nickname, chars in pairs(nicknames) do
                 for char, _ in pairs(chars) do
-                    if char and char == unitName then
-                        self:Debug_Print("Setting unitName cFF1eff00" .. unitName .. "|r to nickname cFF1eff00" .. nickname .. "|r")
+                    if char and char == unitName and frame.name:GetText() ~= nickname then
+                        self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                         frame.name:SetText(nickname)
                         break
                     end

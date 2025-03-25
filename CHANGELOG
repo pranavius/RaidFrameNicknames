@@ -1,3 +1,10 @@
+v0.1.0
+AddOn database structure refactored
+Update UI to associate multiple characters with a single nickname
+Update debug messaging + add new translation strings
+Add IsGroupedUp method
+Add delay to raid frame checks to allow data to populate when first loading into game
+
 v0.0.2
 Rename AddOn and update references to reflect new name
 
