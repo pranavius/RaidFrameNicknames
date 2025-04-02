@@ -149,7 +149,16 @@ function RaidFrameNicknames:OnInitialize()
                 self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
                 return    
             end
-            self:UpdateRaidNamesIfSafe()
+            local unitName = UnitName(frame.unit)
+            local nickname = self:GetNicknameForCharacter(unitName)
+
+            if frame.name and nickname and frame.__rfn_nickname ~= nickname then
+                frame.name:SetText(nickname)
+                frame.__rfn_nickname = nickname
+            elseif frame.name and not nickname and frame.__rfn_nickname then
+                frame.name:SetText(GetUnitName(frame.unit, true))
+                frame.__rfn_nickname = nil
+            end
         end
     end)
 
@@ -282,7 +291,6 @@ end
 
 function RaidFrameNicknames:UpdateRaidNames()
     self:Debug_Print("Updating party/raid nicknames")
-    local nicknames = self.db.profile.nicknames
 
     if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
         self:Debug_Print("|cFF00ccffCompactRaidFrameContainer|r |cFFc41e3aobject or|r |cFF00ccffApplyToFrames|r |cFFc41e3amethod not found|r")
@@ -292,15 +300,27 @@ function RaidFrameNicknames:UpdateRaidNames()
     CompactRaidFrameContainer:ApplyToFrames("normal", function(frame)
         if frame and frame.unit and UnitExists(frame.unit) then
             local unitName = UnitName(frame.unit)
-            for nickname, chars in pairs(nicknames) do
-                for char, _ in pairs(chars) do
-                    if char and char == unitName and frame.name:GetText() ~= nickname then
-                        self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
-                        frame.name:SetText(nickname)
-                        break
-                    end
-                end
+            local nickname = self:GetNicknameForCharacter(unitName)
+            
+            if nickname and frame.name:GetText() ~= nickname then
+                self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
+                frame.name:SetText(nickname)
+                frame.__rfn_nickname = nickname
+                break
             end
         end
     end)
+end
+
+function RaidFrameNicknames:GetNicknameForCharacter(name)
+    local nicknames = self.db.profile.nicknames
+    local result
+    for nickname, chars in pairs(nicknames) do
+        if chars[name] then
+            return nickname
+        end
+    end
+
+    -- If a nickname can't be found, return nil
+    return
 end

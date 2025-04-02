@@ -1,3 +1,6 @@
+v0.1.1
+Attempt to fix name flickering issue
+
 v0.1.0
 AddOn database structure refactored
 Update UI to associate multiple characters with a single nickname
