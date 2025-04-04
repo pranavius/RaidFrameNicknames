@@ -306,7 +306,6 @@ function RaidFrameNicknames:UpdateRaidNames()
                 self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                 frame.name:SetText(nickname)
                 frame.__rfn_nickname = nickname
-                break
             end
         end
     end)
