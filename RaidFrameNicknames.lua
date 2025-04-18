@@ -152,11 +152,11 @@ function RaidFrameNicknames:OnInitialize()
             local unitName = UnitName(frame.unit)
             local nickname = self:GetNicknameForCharacter(unitName)
 
-            if frame.name and nickname and frame.__rfn_nickname ~= nickname then
-                frame.name:SetText(nickname)
+            if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
+                frame.name.SetText(nickname)
                 frame.__rfn_nickname = nickname
             elseif frame.name and not nickname and frame.__rfn_nickname then
-                frame.name:SetText(GetUnitName(frame.unit, true))
+                frame.name.SetText(GetUnitName(frame.unit, true))
                 frame.__rfn_nickname = nil
             end
         end
