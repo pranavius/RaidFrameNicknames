@@ -2,7 +2,7 @@
 ## Title: Raid Frame Nicknames
 ## Notes: Assign nicknames to players when you are in a party or raid with them
 ## Author: pranavius
-## Version: 0.0.2
+## Version: 1.0.0
 ## SavedVariables: RaidFrameNicknamesDB
 ## X-Flavor: retail
 ## X-Category: Raid Frames

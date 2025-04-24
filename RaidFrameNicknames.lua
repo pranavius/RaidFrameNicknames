@@ -146,17 +146,23 @@ function RaidFrameNicknames:OnInitialize()
     hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
         if self:IsGroupedUp() then
             if not frame or not frame.unit or not UnitExists(frame.unit) then
-                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
-                return    
+                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r:", "|cFFc41e3aUnit frame not found|r")
+                return
             end
             local unitName = UnitName(frame.unit)
-            local nickname = self:GetNicknameForCharacter(unitName)
+            -- We only care about units in our party or raid
+            if not UnitInParty(unitName) and not UnitInRaid(unitName) then
+                self:Debug_Print("Ignoring unit not in party or raid")
+                return
 
+            end
+
+            local nickname = self:GetNicknameForCharacter(unitName)
             if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
-                frame.name.SetText(nickname)
+                frame.name:SetText(nickname)
                 frame.__rfn_nickname = nickname
             elseif frame.name and not nickname and frame.__rfn_nickname then
-                frame.name.SetText(GetUnitName(frame.unit, true))
+                frame.name:SetText(GetUnitName(frame.unit, true))
                 frame.__rfn_nickname = nil
             end
         end
@@ -166,9 +172,9 @@ function RaidFrameNicknames:OnInitialize()
 end
 
 -- Functions
-function RaidFrameNicknames:Debug_Print(msg)
+function RaidFrameNicknames:Debug_Print(...)
     if self.db.profile.debug then
-		self:Print("|cFF00ccff[Debug] |r " .. msg)
+		self:Print("|cFF00ccff[Debug] |r ", ...)
 	end
 end
 
@@ -293,7 +299,7 @@ function RaidFrameNicknames:UpdateRaidNames()
     self:Debug_Print("Updating party/raid nicknames")
 
     if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
-        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer|r |cFFc41e3aobject or|r |cFF00ccffApplyToFrames|r |cFFc41e3amethod not found|r")
+        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer |cFFc41e3aobject or |cFF00ccffApplyToFrames |cFFc41e3amethod not found|r")
         return
     end
 

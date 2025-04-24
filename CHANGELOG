@@ -1,3 +1,7 @@
+v1.0.0
+Resolved Lua error caused by trying to set names for units outside party or raid
+Update debug text method to accept multiple arguments
+
 v0.1.1
 Attempt to fix name flickering issue
 
