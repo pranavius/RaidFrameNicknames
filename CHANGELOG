@@ -1,6 +1,10 @@
 v1.0.0
 Resolved Lua error caused by trying to set names for units outside party or raid
 Update debug text method to accept multiple arguments
+Updated options design to show characters and nicknames as inline groups (only 1 nickname can be selected at a time)
+Added duplicate character name protection so the same character cannot be added to multiple nicknames
+Adjusted certain option UI element widths
+
 
 v0.1.1
 Attempt to fix name flickering issue

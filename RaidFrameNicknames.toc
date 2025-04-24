@@ -1,4 +1,4 @@
-## Interface: 110100
+## Interface: 110105
 ## Title: Raid Frame Nicknames
 ## Notes: Assign nicknames to players when you are in a party or raid with them
 ## Author: pranavius

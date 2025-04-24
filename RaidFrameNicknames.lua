@@ -46,24 +46,27 @@ local Options = {
         addButton = {
             type = "execute",
             name = L["add"],
+            width = "half",
             order = 5,
             func = function()
-                local char = RaidFrameNicknames.newChar
-                local nick = RaidFrameNicknames.newNick
-                if char and char ~= "" and nick and nick ~= "" then
-                    RaidFrameNicknames.db.profile.nicknames[nick] = RaidFrameNicknames.db.profile.nicknames[nick] or {}
-                    -- Avoid duplicates
-                    -- TODO: Avoid duplicates across any nicknames
-                    for name, _ in ipairs(RaidFrameNicknames.db.profile.nicknames[nick]) do
-                        if name == char then
-                            RaidFrameNicknames:Print("Character |cFF1eff00" .. char .. "|r already exists for this nickname")
-                            return
+                -- strtrim is a Blizzard-provided global utility function
+                local newChar = strtrim(RaidFrameNicknames.newChar)
+                local newName = strtrim(RaidFrameNicknames.newNick)
+                if newChar and newChar ~= "" and newName and newName ~= "" then
+                    RaidFrameNicknames.db.profile.nicknames[newName] = RaidFrameNicknames.db.profile.nicknames[newName] or {}
+                    -- Avoid duplicate character names across any nicknames
+                    for nickname, _ in pairs(RaidFrameNicknames.db.profile.nicknames) do
+                        for character, _ in pairs(RaidFrameNicknames.db.profile.nicknames[nickname]) do
+                            if character == newChar then
+                                RaidFrameNicknames:Print("Character |cFF1eff00" .. newChar .. "|r is already assigned to nickname |cFF1eff00"..nickname.."|r")
+                                return
+                            end
                         end
                     end
-                    RaidFrameNicknames.db.profile.nicknames[nick][char] = true
+                    RaidFrameNicknames.db.profile.nicknames[newName][newChar] = true
                     RaidFrameNicknames.newNick = ""
                     RaidFrameNicknames.newChar = ""
-                    RaidFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nick .. "|r.")
+                    RaidFrameNicknames:Print("|cFF1eff00" .. newChar .. "|r now has nickname |cFFff8000" .. newName .. "|r.")
                     RaidFrameNicknames:BuildNicknameEntryList()
                     RaidFrameNicknames:UpdateRaidNamesIfSafe()
                 end
@@ -79,13 +82,7 @@ local Options = {
             name = L["current_nicknames"],
             order = 7,
         },
-        entryList = {
-            type = "group",
-            inline = true,
-            name = "",
-            order = 8,
-            args = {} -- Populated dynamically on initialization and after each new entry
-        }
+        -- Nickname groups are populated dynamically on initialization and after each new entry
     }
 }
 
@@ -184,16 +181,16 @@ end
 
 function RaidFrameNicknames:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
-    local entryList = Options.args.entryList
-    if not entryList then
-        self:Debug_Print("|cFFc41e3aNicknames entry list option not found|r")
-        return
-    end
-
-    entryList.args = {}
-    local args = entryList.args
+    local args = Options.args
     local nicknames = self.db.profile.nicknames
     local nicknameOrder = 1
+
+    -- Clear all nickname options args to start fresh
+    for argName, _ in pairs(args) do
+        if argName:find("group_") then
+            args[argName] = nil
+        end
+    end
 
     -- Add each nickname group
     for nickname, characters in pairs(nicknames) do
@@ -201,7 +198,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         args[nicknameKey] = {
             type = "group",
             name = nickname,
-            inline = false,
             order = nicknameOrder,
             args = {}
         }
@@ -209,8 +205,8 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         local groupArgs = args[nicknameKey].args
         local charOrder = 1
 
-         -- Delete the whole nickname
-         groupArgs["deleteNick_" .. nickname] = {
+            -- Delete the whole nickname
+            groupArgs["deleteNick_" .. nickname] = {
             type = "execute",
             name = L["delete_nickname"],
             order = charOrder,
@@ -237,6 +233,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
                     delete = {
                         type = "execute",
                         name = L["delete"],
+                        width = "half",
                         order = 2,
                         func = function()
                             nicknames[nickname][character] = nil
@@ -258,7 +255,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
             name = L["add_to_nickname"],
             order = charOrder + 2,
             set = function(_, val)
-                -- strtrim is a Blizzard-provided global utility function
                 val = strtrim(val)
                 if val ~= "" then
                     nicknames[nickname][val] = true
