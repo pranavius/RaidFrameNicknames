@@ -5,7 +5,8 @@ if not L then return end
 -- Options Text
 L["usage_desc"] = "Add character names and assign custom nicknames for raid frames"
 L["debug"] = "Debug"
-L["debug_desc"] = "Enables debugging messages to be displayed in the default chat window"
+L["debug_desc"] = "Display debugging messages in the default chat window"
+L["dont_enable_warning"] = "You should never need to enable this"
 L["add_new_entry"] = "Add New Entry"
 L["char_name"] = "Character Name"
 L["nickname"] = "Nickname"

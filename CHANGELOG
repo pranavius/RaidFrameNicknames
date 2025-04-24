@@ -4,7 +4,8 @@ Update debug text method to accept multiple arguments
 Updated options design to show characters and nicknames as inline groups (only 1 nickname can be selected at a time)
 Added duplicate character name protection so the same character cannot be added to multiple nicknames
 Adjusted certain option UI element widths
-
+Updated description text for Debug option
+Added space between Debug checkbox and AddOn description text
 
 v0.1.1
 Attempt to fix name flickering issue

@@ -16,30 +16,36 @@ local Options = {
             width = "full",
             order = 0,
         },
+        spacer = {
+            type = "description",
+            name = " ",
+            width = "full",
+            order = 1,
+        },
         debug = {
             type = "toggle",
             name = L["debug"],
-            desc= L["debug_desc"],
-            order = 1,
+            desc= L["debug_desc"].."\n\n|cFFff0000"..L["dont_enable_warning"].."|r",
+            order = 2,
             get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
             set = function(item, val) RaidFrameNicknames.db.profile[item[#item]] = val end
         },
         newEntryHeader = {
             type = "header",
             name = L["add_new_entry"],
-            order = 2,
+            order = 3,
         },
         nicknameInput = {
             type = "input",
             name = L["nickname"],
-            order = 3,
+            order = 4,
             get = function() return RaidFrameNicknames.newNick or "" end,
             set = function(_, val) RaidFrameNicknames.newNick = val end
         },
         characterInput = {
             type = "input",
             name = L["char_name"],
-            order = 4,
+            order = 5,
             get = function() return RaidFrameNicknames.newChar or "" end,
             set = function(_, val) RaidFrameNicknames.newChar = val end
         },
@@ -47,7 +53,7 @@ local Options = {
             type = "execute",
             name = L["add"],
             width = "half",
-            order = 5,
+            order = 6,
             func = function()
                 -- strtrim is a Blizzard-provided global utility function
                 local newChar = strtrim(RaidFrameNicknames.newChar)
@@ -72,15 +78,15 @@ local Options = {
                 end
             end
         },
-        spacer = {
+        spacerTwo = {
             type = "description",
             name = " ",
-            order = 6,
+            order = 7,
         },
         currentEntriesHeader = {
             type = "header",
             name = L["current_nicknames"],
-            order = 7,
+            order = 8,
         },
         -- Nickname groups are populated dynamically on initialization and after each new entry
     }
