@@ -192,7 +192,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
     local args = Options.args
     local nicknames = self.db.profile.nicknames
-    local nicknameOrder = 1
 
     -- Clear all nickname options args to start fresh
     for argName, _ in pairs(args) do
@@ -201,13 +200,20 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         end
     end
 
-    -- Add each nickname group
-    for nickname, characters in pairs(nicknames) do
+    -- Sort nicknames alphabetically into a new table
+    local sortedNicknameKeys = {}
+    for nickname in pairs(nicknames) do
+        table.insert(sortedNicknameKeys, nickname)
+    end
+    table.sort(sortedNicknameKeys)
+
+    -- Add each nickname group in alphabetical order
+    for i, nickname in pairs(sortedNicknameKeys) do
         local nicknameKey = "group_" .. nickname
         args[nicknameKey] = {
             type = "group",
             name = nickname,
-            order = nicknameOrder,
+            order = i,
             args = {}
         }
 
@@ -226,6 +232,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         }
 
         -- Character list under this nickname
+        local characters = nicknames[nickname]
         for character, _ in pairs(characters) do
             groupArgs["char_" .. character] = {
                 type = "group",
@@ -272,8 +279,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
             end,
             get = function() return "" end,
         }
-
-        nicknameOrder = nicknameOrder + 1
     end
 end
 
