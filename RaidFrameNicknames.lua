@@ -147,6 +147,7 @@ function RaidFrameNicknames:OnInitialize()
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateRaidNamesIfSafe")
 
     hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
+        if frame:IsForbidden() then return end
         if self:IsGroupedUp() then
             if not frame or not frame.unit or not UnitExists(frame.unit) then
                 self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r:", "|cFFc41e3aUnit frame not found|r")
@@ -155,16 +156,18 @@ function RaidFrameNicknames:OnInitialize()
             local unitName = UnitName(frame.unit)
             -- We only care about units in our party or raid
             if not UnitInParty(unitName) and not UnitInRaid(unitName) then
-                self:Debug_Print("Ignoring unit not in party or raid")
+                self:Debug_Print("Ignoring unit not in party or raid:", unitName)
                 return
 
             end
 
             local nickname = self:GetNicknameForCharacter(unitName)
             if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
+                self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                 frame.name:SetText(nickname)
                 frame.__rfn_nickname = nickname
             elseif frame.name and not nickname and frame.__rfn_nickname then
+                self:Debug_Print("Removing nickname |cFF1eff00" .. nickname .. "|r from unitName |cFFff8000" .. unitName .. "|r")
                 frame.name:SetText(GetUnitName(frame.unit, true))
                 frame.__rfn_nickname = nil
             end
