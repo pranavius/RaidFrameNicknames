@@ -167,7 +167,7 @@ function RaidFrameNicknames:OnInitialize()
                 frame.name:SetText(nickname)
                 frame.__rfn_nickname = nickname
             elseif frame.name and not nickname and frame.__rfn_nickname then
-                self:Debug_Print("Removing nickname |cFF1eff00" .. nickname .. "|r from unitName |cFFff8000" .. unitName .. "|r")
+                self:Debug_Print("Removing nickname from unitName |cFFff8000" .. unitName .. "|r")
                 frame.name:SetText(GetUnitName(frame.unit, true))
                 frame.__rfn_nickname = nil
             end
