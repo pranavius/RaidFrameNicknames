@@ -1,24 +1,27 @@
-v1.0.0
-Resolved Lua error caused by trying to set names for units outside party or raid
-Update debug text method to accept multiple arguments
-Updated options design to show characters and nicknames as inline groups (only 1 nickname can be selected at a time)
-Added duplicate character name protection so the same character cannot be added to multiple nicknames
-Adjusted certain option UI element widths
-Updated description text for Debug option
-Added space between Debug checkbox and AddOn description text
+**1.0.1**
+Update for compatibility with Patch 11.1.7
 
-v0.1.1
-Attempt to fix name flickering issue
+**1.0.0**
+- Resolved Lua error caused by trying to set names for units outside party or raid
+- Update debug text method to accept multiple arguments
+- Updated options design to show characters and nicknames as inline groups (only 1 nickname can be selected at a time)
+- Added duplicate character name protection so the same character cannot be added to multiple nicknames
+- Adjusted certain option UI element widths
+- Updated description text for Debug option
+- Added space between Debug checkbox and AddOn description text
 
-v0.1.0
-AddOn database structure refactored
-Update UI to associate multiple characters with a single nickname
-Update debug messaging + add new translation strings
-Add IsGroupedUp method
-Add delay to raid frame checks to allow data to populate when first loading into game
+**0.1.1**
+- Attempt to fix name flickering issue
 
-v0.0.2
-Rename AddOn and update references to reflect new name
+**0.1.0**
+- AddOn database structure refactored
+- Update UI to associate multiple characters with a single nickname
+- Update debug messaging + add new translation strings
+- Add IsGroupedUp method
+- Add delay to raid frame checks to allow data to populate when first loading into game
 
-v0.0.1
-Initial build and test
+**0.0.2**
+- Rename AddOn and update references to reflect new name
+
+**0.0.1**
+- Initial build and test
