@@ -1,7 +1,7 @@
-local addonName = "Raid Frame Nicknames"
+local addonName = "WhoDat"
 
 -- Module
-RaidFrameNicknames = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
+WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
 
 -- Localization
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
@@ -27,8 +27,8 @@ local Options = {
             name = L["debug"],
             desc= L["debug_desc"].."\n\n|cFFff0000"..L["dont_enable_warning"].."|r",
             order = 2,
-            get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
-            set = function(item, val) RaidFrameNicknames.db.profile[item[#item]] = val end
+            get = function(item) return WhoDat.db.profile[item[#item]] end,
+            set = function(item, val) WhoDat.db.profile[item[#item]] = val end
         },
         newEntryHeader = {
             type = "header",
@@ -39,15 +39,15 @@ local Options = {
             type = "input",
             name = L["nickname"],
             order = 4,
-            get = function() return RaidFrameNicknames.newNick or "" end,
-            set = function(_, val) RaidFrameNicknames.newNick = val end
+            get = function() return WhoDat.newNick or "" end,
+            set = function(_, val) WhoDat.newNick = val end
         },
         characterInput = {
             type = "input",
             name = L["char_name"],
             order = 5,
-            get = function() return RaidFrameNicknames.newChar or "" end,
-            set = function(_, val) RaidFrameNicknames.newChar = val end
+            get = function() return WhoDat.newChar or "" end,
+            set = function(_, val) WhoDat.newChar = val end
         },
         addButton = {
             type = "execute",
@@ -56,25 +56,25 @@ local Options = {
             order = 6,
             func = function()
                 -- strtrim is a Blizzard-provided global utility function
-                local newChar = strtrim(RaidFrameNicknames.newChar)
-                local newName = strtrim(RaidFrameNicknames.newNick)
+                local newChar = strtrim(WhoDat.newChar)
+                local newName = strtrim(WhoDat.newNick)
                 if newChar and newChar ~= "" and newName and newName ~= "" then
-                    RaidFrameNicknames.db.profile.nicknames[newName] = RaidFrameNicknames.db.profile.nicknames[newName] or {}
+                    WhoDat.db.profile.nicknames[newName] = WhoDat.db.profile.nicknames[newName] or {}
                     -- Avoid duplicate character names across any nicknames
-                    for nickname, _ in pairs(RaidFrameNicknames.db.profile.nicknames) do
-                        for character, _ in pairs(RaidFrameNicknames.db.profile.nicknames[nickname]) do
+                    for nickname, _ in pairs(WhoDat.db.profile.nicknames) do
+                        for character, _ in pairs(WhoDat.db.profile.nicknames[nickname]) do
                             if character == newChar then
-                                RaidFrameNicknames:Print("Character |cFF1eff00" .. newChar .. "|r is already assigned to nickname |cFF1eff00"..nickname.."|r")
+                                WhoDat:Print("Character |cFF1eff00" .. newChar .. "|r is already assigned to nickname |cFF1eff00"..nickname.."|r")
                                 return
                             end
                         end
                     end
-                    RaidFrameNicknames.db.profile.nicknames[newName][newChar] = true
-                    RaidFrameNicknames.newNick = ""
-                    RaidFrameNicknames.newChar = ""
-                    RaidFrameNicknames:Print("|cFF1eff00" .. newChar .. "|r now has nickname |cFFff8000" .. newName .. "|r.")
-                    RaidFrameNicknames:BuildNicknameEntryList()
-                    RaidFrameNicknames:UpdateRaidNamesIfSafe()
+                    WhoDat.db.profile.nicknames[newName][newChar] = true
+                    WhoDat.newNick = ""
+                    WhoDat.newChar = ""
+                    WhoDat:Print("|cFF1eff00" .. newChar .. "|r now has nickname |cFFff8000" .. newName .. "|r.")
+                    WhoDat:BuildNicknameEntryList()
+                    WhoDat:UpdateRaidNamesIfSafe()
                 end
             end
         },
@@ -101,9 +101,9 @@ local Defaults = {
 
 local SlashOptions = {
 	type = "group",
-	handler = RaidFrameNicknames,
-	get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
-	set = function(item, value) RaidFrameNicknames.db.profile[item[#item]] = value end,
+	handler = WhoDat,
+	get = function(item) return WhoDat.db.profile[item[#item]] end,
+	set = function(item, value) WhoDat.db.profile[item[#item]] = value end,
 	args = {
         debug = {
             type = "toggle",
@@ -115,18 +115,18 @@ local SlashOptions = {
 			name = "config",
 			desc = L["config_desc"],
 			func = function()
-                Settings.OpenToCategory(RaidFrameNicknames.categoryID)
+                Settings.OpenToCategory(WhoDat.categoryID)
             end,
 		},
 	},
 }
 
-local SlashCmds = { "rfn" }
+local SlashCmds = { "wd" }
 
 -- Initialization
-function RaidFrameNicknames:OnInitialize()
+function WhoDat:OnInitialize()
     -- Load database
-	self.db = LibStub("AceDB-3.0"):New("RaidFrameNicknamesDB", Defaults, "Default")
+	self.db = LibStub("AceDB-3.0"):New("WhoDatDB", Defaults, "Default")
 
     -- Setup config options
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
@@ -134,10 +134,10 @@ function RaidFrameNicknames:OnInitialize()
     local registry = LibStub("AceConfigRegistry-3.0")
 
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
-    registry:RegisterOptionsTable("Raid Frame Nicknames Options", Options)
-	registry:RegisterOptionsTable("Raid Frame Nicknames Profiles", profiles)
-    _, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Options", addonName)
-	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Profiles", "Profiles", addonName);
+    registry:RegisterOptionsTable("WhoDat Options", Options)
+	registry:RegisterOptionsTable("WhoDat Profiles", profiles)
+    _, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("WhoDat Options", addonName)
+	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("WhoDat Profiles", "Profiles", addonName);
 
     self:BuildNicknameEntryList()
 
@@ -164,14 +164,14 @@ function RaidFrameNicknames:OnInitialize()
             end
             
             local nickname = self:GetNicknameForCharacter(unitName)
-            if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
+            if frame.name and nickname and (frame.__wd_nickname ~= nickname or frame.__wd_nickname ~= frame.name:GetText()) then
                 self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                 frame.name:SetText(nickname)
-                frame.__rfn_nickname = nickname
-            elseif frame.name and not nickname and frame.__rfn_nickname then
+                frame.__wd_nickname = nickname
+            elseif frame.name and not nickname and frame.__wd_nickname then
                 self:Debug_Print("Removing nickname from unitName |cFFff8000" .. unitName .. "|r")
                 frame.name:SetText(GetUnitName(frame.unit, true))
-                frame.__rfn_nickname = nil
+                frame.__wd_nickname = nil
             end
         end
     end)
@@ -180,17 +180,17 @@ function RaidFrameNicknames:OnInitialize()
 end
 
 -- Functions
-function RaidFrameNicknames:Debug_Print(...)
+function WhoDat:Debug_Print(...)
     if self.db.profile.debug then
 		self:Print("|cFF00ccff[Debug] |r ", ...)
 	end
 end
 
-function RaidFrameNicknames:IsGroupedUp()
+function WhoDat:IsGroupedUp()
     return IsInGroup() or IsInRaid()
 end
 
-function RaidFrameNicknames:BuildNicknameEntryList()
+function WhoDat:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
     local args = Options.args
     local nicknames = self.db.profile.nicknames
@@ -284,7 +284,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
     end
 end
 
-function RaidFrameNicknames:UpdateRaidNamesIfSafe()
+function WhoDat:UpdateRaidNamesIfSafe()
     if self:IsGroupedUp() and not InCombatLockdown() then
         C_Timer.After(0.5, function()
             self:Debug_Print("In group/raid and out of combat")
@@ -297,7 +297,7 @@ function RaidFrameNicknames:UpdateRaidNamesIfSafe()
     end
 end
 
-function RaidFrameNicknames:PLAYER_REGEN_ENABLED()
+function WhoDat:PLAYER_REGEN_ENABLED()
     if self:IsGroupedUp() then
         self:Debug_Print("In group/raid and exited combat")
         self:UnregisterEvent("PLAYER_REGEN_ENABLED")
@@ -307,7 +307,7 @@ function RaidFrameNicknames:PLAYER_REGEN_ENABLED()
     end
 end
 
-function RaidFrameNicknames:UpdateRaidNames()
+function WhoDat:UpdateRaidNames()
     self:Debug_Print("Updating party/raid nicknames")
 
     if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
@@ -323,13 +323,13 @@ function RaidFrameNicknames:UpdateRaidNames()
             if nickname and frame.name:GetText() ~= nickname then
                 self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                 frame.name:SetText(nickname)
-                frame.__rfn_nickname = nickname
+                frame.__wd_nickname = nickname
             end
         end
     end)
 end
 
-function RaidFrameNicknames:GetNicknameForCharacter(name)
+function WhoDat:GetNicknameForCharacter(name)
     local nicknames = self.db.profile.nicknames
     local result
     for nickname, chars in pairs(nicknames) do
