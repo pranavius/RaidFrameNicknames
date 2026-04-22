@@ -115,7 +115,7 @@ local SlashOptions = {
 			name = "config",
 			desc = L["config_desc"],
 			func = function()
-                Settings.OpenToCategory(addonName)
+                Settings.OpenToCategory(RaidFrameNicknames.categoryID)
             end,
 		},
 	},
@@ -136,7 +136,7 @@ function RaidFrameNicknames:OnInitialize()
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
     registry:RegisterOptionsTable("Raid Frame Nicknames Options", Options)
 	registry:RegisterOptionsTable("Raid Frame Nicknames Profiles", profiles)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Options", addonName)
+    _, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Options", addonName)
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Raid Frame Nicknames Profiles", "Profiles", addonName);
 
     self:BuildNicknameEntryList()
@@ -154,13 +154,15 @@ function RaidFrameNicknames:OnInitialize()
                 return
             end
             local unitName = UnitName(frame.unit)
-            -- We only care about units in our party or raid
-            if not UnitInParty(unitName) and not UnitInRaid(unitName) then
-                self:Debug_Print("Ignoring unit not in party or raid:", unitName)
+            -- We only care about units in our party or raid (unit names outside our group are likely secret values anyway)
+            if issecretvalue(unitName) then
+                self:Debug_Print("Unit name is a secret value, ignore", unitName)
                 return
-
+            elseif not UnitInParty(unitName) and not UnitInRaid(unitName) then
+                self:Debug_Print("Unit not in party or raid, ignore", unitName)
+                return
             end
-
+            
             local nickname = self:GetNicknameForCharacter(unitName)
             if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
                 self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
