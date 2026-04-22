@@ -1,11 +1,11 @@
-## Interface: 110100
+## Interface: 120005
 ## Title: Raid Frame Nicknames
 ## Notes: Assign nicknames to players when you are in a party or raid with them
-## Author: pranavius
-## Version: 0.0.2
+## Author: @project-author@
+## Version: @project-version@
 ## SavedVariables: RaidFrameNicknamesDB
+## Category: Unit Frames
 ## X-Flavor: retail
-## X-Category: Raid Frames
 ## X-Localizations: enUS
 ## X-AddOn-Provider: github
 ## X-Curse-Project-ID: 1225449
@@ -13,5 +13,5 @@
 
 embeds.xml
 
-i18n\enUS.lua
+Locales\enUS.lua
 RaidFrameNicknames.lua
