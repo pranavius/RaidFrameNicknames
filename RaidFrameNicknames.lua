@@ -16,76 +16,79 @@ local Options = {
             width = "full",
             order = 0,
         },
+        spacer = {
+            type = "description",
+            name = " ",
+            width = "full",
+            order = 1,
+        },
         debug = {
             type = "toggle",
             name = L["debug"],
-            desc= L["debug_desc"],
-            order = 1,
+            desc= L["debug_desc"].."\n\n|cFFff0000"..L["dont_enable_warning"].."|r",
+            order = 2,
             get = function(item) return RaidFrameNicknames.db.profile[item[#item]] end,
             set = function(item, val) RaidFrameNicknames.db.profile[item[#item]] = val end
         },
         newEntryHeader = {
             type = "header",
             name = L["add_new_entry"],
-            order = 2,
+            order = 3,
         },
         nicknameInput = {
             type = "input",
             name = L["nickname"],
-            order = 3,
+            order = 4,
             get = function() return RaidFrameNicknames.newNick or "" end,
             set = function(_, val) RaidFrameNicknames.newNick = val end
         },
         characterInput = {
             type = "input",
             name = L["char_name"],
-            order = 4,
+            order = 5,
             get = function() return RaidFrameNicknames.newChar or "" end,
             set = function(_, val) RaidFrameNicknames.newChar = val end
         },
         addButton = {
             type = "execute",
             name = L["add"],
-            order = 5,
+            width = "half",
+            order = 6,
             func = function()
-                local char = RaidFrameNicknames.newChar
-                local nick = RaidFrameNicknames.newNick
-                if char and char ~= "" and nick and nick ~= "" then
-                    RaidFrameNicknames.db.profile.nicknames[nick] = RaidFrameNicknames.db.profile.nicknames[nick] or {}
-                    -- Avoid duplicates
-                    -- TODO: Avoid duplicates across any nicknames
-                    for name, _ in ipairs(RaidFrameNicknames.db.profile.nicknames[nick]) do
-                        if name == char then
-                            RaidFrameNicknames:Print("Character |cFF1eff00" .. char .. "|r already exists for this nickname")
-                            return
+                -- strtrim is a Blizzard-provided global utility function
+                local newChar = strtrim(RaidFrameNicknames.newChar)
+                local newName = strtrim(RaidFrameNicknames.newNick)
+                if newChar and newChar ~= "" and newName and newName ~= "" then
+                    RaidFrameNicknames.db.profile.nicknames[newName] = RaidFrameNicknames.db.profile.nicknames[newName] or {}
+                    -- Avoid duplicate character names across any nicknames
+                    for nickname, _ in pairs(RaidFrameNicknames.db.profile.nicknames) do
+                        for character, _ in pairs(RaidFrameNicknames.db.profile.nicknames[nickname]) do
+                            if character == newChar then
+                                RaidFrameNicknames:Print("Character |cFF1eff00" .. newChar .. "|r is already assigned to nickname |cFF1eff00"..nickname.."|r")
+                                return
+                            end
                         end
                     end
-                    RaidFrameNicknames.db.profile.nicknames[nick][char] = true
+                    RaidFrameNicknames.db.profile.nicknames[newName][newChar] = true
                     RaidFrameNicknames.newNick = ""
                     RaidFrameNicknames.newChar = ""
-                    RaidFrameNicknames:Debug_Print("New entry: |cFF1eff00" .. char .. "|r now has nickname |cFFff8000" .. nick .. "|r.")
+                    RaidFrameNicknames:Print("|cFF1eff00" .. newChar .. "|r now has nickname |cFFff8000" .. newName .. "|r.")
                     RaidFrameNicknames:BuildNicknameEntryList()
                     RaidFrameNicknames:UpdateRaidNamesIfSafe()
                 end
             end
         },
-        spacer = {
+        spacerTwo = {
             type = "description",
             name = " ",
-            order = 6,
+            order = 7,
         },
         currentEntriesHeader = {
             type = "header",
             name = L["current_nicknames"],
-            order = 7,
-        },
-        entryList = {
-            type = "group",
-            inline = true,
-            name = "",
             order = 8,
-            args = {} -- Populated dynamically on initialization and after each new entry
-        }
+        },
+        -- Nickname groups are populated dynamically on initialization and after each new entry
     }
 }
 
@@ -144,18 +147,27 @@ function RaidFrameNicknames:OnInitialize()
     self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "UpdateRaidNamesIfSafe")
 
     hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
+        if frame:IsForbidden() then return end
         if self:IsGroupedUp() then
             if not frame or not frame.unit or not UnitExists(frame.unit) then
-                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r: |cFFc41e3aUnit frame not found|r")
-                return    
+                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r:", "|cFFc41e3aUnit frame not found|r")
+                return
             end
             local unitName = UnitName(frame.unit)
-            local nickname = self:GetNicknameForCharacter(unitName)
+            -- We only care about units in our party or raid
+            if not UnitInParty(unitName) and not UnitInRaid(unitName) then
+                self:Debug_Print("Ignoring unit not in party or raid:", unitName)
+                return
 
-            if frame.name and nickname and frame.__rfn_nickname ~= nickname then
+            end
+
+            local nickname = self:GetNicknameForCharacter(unitName)
+            if frame.name and nickname and (frame.__rfn_nickname ~= nickname or frame.__rfn_nickname ~= frame.name:GetText()) then
+                self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
                 frame.name:SetText(nickname)
                 frame.__rfn_nickname = nickname
             elseif frame.name and not nickname and frame.__rfn_nickname then
+                self:Debug_Print("Removing nickname from unitName |cFFff8000" .. unitName .. "|r")
                 frame.name:SetText(GetUnitName(frame.unit, true))
                 frame.__rfn_nickname = nil
             end
@@ -166,9 +178,9 @@ function RaidFrameNicknames:OnInitialize()
 end
 
 -- Functions
-function RaidFrameNicknames:Debug_Print(msg)
+function RaidFrameNicknames:Debug_Print(...)
     if self.db.profile.debug then
-		self:Print("|cFF00ccff[Debug] |r " .. msg)
+		self:Print("|cFF00ccff[Debug] |r ", ...)
 	end
 end
 
@@ -178,33 +190,38 @@ end
 
 function RaidFrameNicknames:BuildNicknameEntryList()
     self:Debug_Print("Rebuild nickname list")
-    local entryList = Options.args.entryList
-    if not entryList then
-        self:Debug_Print("|cFFc41e3aNicknames entry list option not found|r")
-        return
+    local args = Options.args
+    local nicknames = self.db.profile.nicknames
+
+    -- Clear all nickname options args to start fresh
+    for argName, _ in pairs(args) do
+        if argName:find("group_") then
+            args[argName] = nil
+        end
     end
 
-    entryList.args = {}
-    local args = entryList.args
-    local nicknames = self.db.profile.nicknames
-    local nicknameOrder = 1
+    -- Sort nicknames alphabetically into a new table
+    local sortedNicknameKeys = {}
+    for nickname in pairs(nicknames) do
+        table.insert(sortedNicknameKeys, nickname)
+    end
+    table.sort(sortedNicknameKeys)
 
-    -- Add each nickname group
-    for nickname, characters in pairs(nicknames) do
+    -- Add each nickname group in alphabetical order
+    for i, nickname in pairs(sortedNicknameKeys) do
         local nicknameKey = "group_" .. nickname
         args[nicknameKey] = {
             type = "group",
             name = nickname,
-            inline = false,
-            order = nicknameOrder,
+            order = i,
             args = {}
         }
 
         local groupArgs = args[nicknameKey].args
         local charOrder = 1
 
-         -- Delete the whole nickname
-         groupArgs["deleteNick_" .. nickname] = {
+            -- Delete the whole nickname
+            groupArgs["deleteNick_" .. nickname] = {
             type = "execute",
             name = L["delete_nickname"],
             order = charOrder,
@@ -215,6 +232,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
         }
 
         -- Character list under this nickname
+        local characters = nicknames[nickname]
         for character, _ in pairs(characters) do
             groupArgs["char_" .. character] = {
                 type = "group",
@@ -231,6 +249,7 @@ function RaidFrameNicknames:BuildNicknameEntryList()
                     delete = {
                         type = "execute",
                         name = L["delete"],
+                        width = "half",
                         order = 2,
                         func = function()
                             nicknames[nickname][character] = nil
@@ -252,7 +271,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
             name = L["add_to_nickname"],
             order = charOrder + 2,
             set = function(_, val)
-                -- strtrim is a Blizzard-provided global utility function
                 val = strtrim(val)
                 if val ~= "" then
                     nicknames[nickname][val] = true
@@ -261,8 +279,6 @@ function RaidFrameNicknames:BuildNicknameEntryList()
             end,
             get = function() return "" end,
         }
-
-        nicknameOrder = nicknameOrder + 1
     end
 end
 
@@ -293,7 +309,7 @@ function RaidFrameNicknames:UpdateRaidNames()
     self:Debug_Print("Updating party/raid nicknames")
 
     if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
-        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer|r |cFFc41e3aobject or|r |cFF00ccffApplyToFrames|r |cFFc41e3amethod not found|r")
+        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer |cFFc41e3aobject or |cFF00ccffApplyToFrames |cFFc41e3amethod not found|r")
         return
     end
 
