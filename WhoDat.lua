@@ -1,11 +1,13 @@
-local addonName = "WhoDat"
+---@type string
+local addonName = ...
 
--- Module
+---@class WhoDat
 WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
 
--- Localization
+---@class Locale
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 
+---@class AceConfig.OptionsTable
 local Options = {
     type = "group",
     name = addonName,
@@ -25,7 +27,7 @@ local Options = {
         debug = {
             type = "toggle",
             name = L["debug"],
-            desc= L["debug_desc"].."\n\n|cFFff0000"..L["dont_enable_warning"].."|r",
+            desc= L["debug_desc"].."\n\n"..PURE_RED_COLOR:WrapTextInColorCode(L["dont_enable_warning"]),
             order = 2,
             get = function(item) return WhoDat.db.profile[item[#item]] end,
             set = function(item, val) WhoDat.db.profile[item[#item]] = val end
@@ -39,8 +41,8 @@ local Options = {
             type = "input",
             name = L["nickname"],
             order = 4,
-            get = function() return WhoDat.newNick or "" end,
-            set = function(_, val) WhoDat.newNick = val end
+            get = function() return WhoDat.newName or "" end,
+            set = function(_, val) WhoDat.newName = val end
         },
         characterInput = {
             type = "input",
@@ -55,24 +57,23 @@ local Options = {
             width = "half",
             order = 6,
             func = function()
-                -- strtrim is a Blizzard-provided global utility function
                 local newChar = strtrim(WhoDat.newChar)
-                local newName = strtrim(WhoDat.newNick)
+                local newName = strtrim(WhoDat.newName)
                 if newChar and newChar ~= "" and newName and newName ~= "" then
                     WhoDat.db.profile.nicknames[newName] = WhoDat.db.profile.nicknames[newName] or {}
                     -- Avoid duplicate character names across any nicknames
                     for nickname, _ in pairs(WhoDat.db.profile.nicknames) do
                         for character, _ in pairs(WhoDat.db.profile.nicknames[nickname]) do
                             if character == newChar then
-                                WhoDat:Print("Character |cFF1eff00" .. newChar .. "|r is already assigned to nickname |cFF1eff00"..nickname.."|r")
+                                WhoDat:Print("Character "..UNCOMMON_GREEN_COLOR:WrapTextInColorCode(newChar).." is already assigned to nickname "..GOLD_FONT_COLOR:WrapTextInColorCode(nickname))
                                 return
                             end
                         end
                     end
                     WhoDat.db.profile.nicknames[newName][newChar] = true
-                    WhoDat.newNick = ""
+                    WhoDat.newName = ""
                     WhoDat.newChar = ""
-                    WhoDat:Print("|cFF1eff00" .. newChar .. "|r now has nickname |cFFff8000" .. newName .. "|r.")
+                    WhoDat:PrintAssocUpdateMessage(newChar, newName, true)
                     WhoDat:BuildNicknameEntryList()
                     WhoDat:UpdateRaidNamesIfSafe()
                 end
@@ -92,6 +93,7 @@ local Options = {
     }
 }
 
+---@class AceDB.Schema
 local Defaults = {
     profile = {
         debug = false,
@@ -99,6 +101,7 @@ local Defaults = {
     }
 }
 
+---@class AceConfig.OptionsTable
 local SlashOptions = {
 	type = "group",
 	handler = WhoDat,
@@ -121,9 +124,9 @@ local SlashOptions = {
 	},
 }
 
-local SlashCmds = { "wd" }
+---@type string[]
+local SlashCmds = { "wd", "whodat" }
 
--- Initialization
 function WhoDat:OnInitialize()
     -- Load database
 	self.db = LibStub("AceDB-3.0"):New("WhoDatDB", Defaults, "Default")
@@ -134,10 +137,10 @@ function WhoDat:OnInitialize()
     local registry = LibStub("AceConfigRegistry-3.0")
 
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
-    registry:RegisterOptionsTable("WhoDat Options", Options)
-	registry:RegisterOptionsTable("WhoDat Profiles", profiles)
-    _, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("WhoDat Options", addonName)
-	LibStub("AceConfigDialog-3.0"):AddToBlizOptions("WhoDat Profiles", "Profiles", addonName);
+    registry:RegisterOptionsTable(addonName.."Options", Options)
+	registry:RegisterOptionsTable(addonName.."Profiles", profiles)
+    _, self.categoryID = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName.."Options", addonName)
+	LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName.."Profiles", "Profiles", addonName);
 
     self:BuildNicknameEntryList()
 
@@ -150,55 +153,77 @@ function WhoDat:OnInitialize()
         if frame:IsForbidden() then return end
         if self:IsGroupedUp() then
             if not frame or not frame.unit or not UnitExists(frame.unit) then
-                self:Debug_Print("|cFF00ccffCompactUnitFrame_UpdateName|r:", "|cFFc41e3aUnit frame not found|r")
+                self:PrintDebugMsg("CompactUnitFrame_UpdateName: Unit frame not found")
                 return
             end
             local unitName = UnitName(frame.unit)
             -- We only care about units in our party or raid (unit names outside our group are likely secret values anyway)
             if issecretvalue(unitName) then
-                self:Debug_Print("Unit name is a secret value, ignore", unitName)
+                self:PrintDebugMsg("Unit name is a secret value, ignore", unitName)
                 return
             elseif not UnitInParty(unitName) and not UnitInRaid(unitName) then
-                self:Debug_Print("Unit not in party or raid, ignore", unitName)
+                self:PrintDebugMsg("Unit not in party or raid, ignore", unitName)
                 return
             end
             
             local nickname = self:GetNicknameForCharacter(unitName)
             if frame.name and nickname and (frame.__wd_nickname ~= nickname or frame.__wd_nickname ~= frame.name:GetText()) then
-                self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
+                self:PrintDebugMsg("Setting unitName", UNCOMMON_GREEN_COLOR:WrapTextInColorCode(unitName), "to nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
                 frame.name:SetText(nickname)
                 frame.__wd_nickname = nickname
             elseif frame.name and not nickname and frame.__wd_nickname then
-                self:Debug_Print("Removing nickname from unitName |cFFff8000" .. unitName .. "|r")
+                self:PrintDebugMsg("Removing nickname from unitName", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(unitName))
                 frame.name:SetText(GetUnitName(frame.unit, true))
                 frame.__wd_nickname = nil
             end
         end
     end)
 
-    self:Debug_Print("Loaded")
+    self:PrintDebugMsg("Loaded")
 end
 
--- Functions
-function WhoDat:Debug_Print(...)
+---Prints text when WhoDat is in debug mode
+---@param...any Arguments to print to the chat window
+function WhoDat:PrintDebugMsg(...)
     if self.db.profile.debug then
-		self:Print("|cFF00ccff[Debug] |r ", ...)
+		self:Print(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode("[Debug]"),...)
 	end
 end
 
+---Prints a message to the chat window when a character is associated with a nickname
+---@param character string Name of the character to assign a nickname to
+---@param nickname string Nickname to be assigned
+---@param isAdding boolean `true` if associating a character with a nickname and `false` if disassociating
+function WhoDat:PrintAssocUpdateMessage(character, nickname, isAdding)
+    if isAdding then
+        self:Print(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character), "now has nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+    else
+        self:Print(GOLD_FONT_COLOR:WrapTextInColorCode(character), "no longer has nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+    end
+end
+
+---Prints a message to the chat window when a nickname has been deleted from the AddOn configuration
+---@param nickname string The deleted nickname
+function WhoDat:PrintNicknameDeletionMessage(nickname)
+    self:Print("Nickname", ERROR_COLOR:WrapTextInColorCode(nickname), "has been deleted")
+end
+
+---@return boolean `true` if the user is in a party or raid, `false` otherwise
 function WhoDat:IsGroupedUp()
     return IsInGroup() or IsInRaid()
 end
 
+---Builds the nickname management section of the AddOn options window
 function WhoDat:BuildNicknameEntryList()
-    self:Debug_Print("Rebuild nickname list")
+    self:PrintDebugMsg("Rebuild nickname list")
+    ---@type table<string, AceConfig.OptionsTable>
     local args = Options.args
     local nicknames = self.db.profile.nicknames
 
     -- Clear all nickname options args to start fresh
-    for argName, _ in pairs(args) do
-        if argName:find("group_") then
-            args[argName] = nil
+    for arg, _ in pairs(args) do
+        if arg:find("group_") then
+            args[arg] = nil
         end
     end
 
@@ -211,7 +236,7 @@ function WhoDat:BuildNicknameEntryList()
 
     -- Add each nickname group in alphabetical order
     for i, nickname in pairs(sortedNicknameKeys) do
-        local nicknameKey = "group_" .. nickname
+        local nicknameKey = "group_"..nickname
         args[nicknameKey] = {
             type = "group",
             name = nickname,
@@ -223,12 +248,13 @@ function WhoDat:BuildNicknameEntryList()
         local charOrder = 1
 
             -- Delete the whole nickname
-            groupArgs["deleteNick_" .. nickname] = {
+            groupArgs["deleteNickname_"..nickname] = {
             type = "execute",
             name = L["delete_nickname"],
             order = charOrder,
             func = function()
                 nicknames[nickname] = nil
+                self:PrintNicknameDeletionMessage(nickname)
                 self:BuildNicknameEntryList()
             end,
         }
@@ -236,7 +262,7 @@ function WhoDat:BuildNicknameEntryList()
         -- Character list under this nickname
         local characters = nicknames[nickname]
         for character, _ in pairs(characters) do
-            groupArgs["char_" .. character] = {
+            groupArgs["character_"..character] = {
                 type = "group",
                 name = "",
                 inline = true,
@@ -245,19 +271,22 @@ function WhoDat:BuildNicknameEntryList()
                     label = {
                         type = "description",
                         name = character,
-                        width = "double",
+                        width = 0.75,
                         order = 1,
                     },
                     delete = {
                         type = "execute",
                         name = L["delete"],
+                        desc = "Disassociate character "..character.." from "..nickname,
                         width = "half",
                         order = 2,
                         func = function()
                             nicknames[nickname][character] = nil
+                            WhoDat:PrintAssocUpdateMessage(character, nickname, false)
                             -- If there are no other characters associated with the nickname, delete the nickname itself
                             if not next(nicknames[nickname]) then
                                 nicknames[nickname] = nil
+                                self:PrintNicknameDeletionMessage(nickname)
                             end
                             self:BuildNicknameEntryList()
                         end,
@@ -268,7 +297,7 @@ function WhoDat:BuildNicknameEntryList()
         end
 
         -- Input to add a new character to this nickname
-        groupArgs["addChar_" .. nickname] = {
+        groupArgs["addCharacter_"..nickname] = {
             type = "input",
             name = L["add_to_nickname"],
             order = charOrder + 2,
@@ -276,6 +305,7 @@ function WhoDat:BuildNicknameEntryList()
                 val = strtrim(val)
                 if val ~= "" then
                     nicknames[nickname][val] = true
+                    WhoDat:PrintAssocUpdateMessage(val, nickname, true)
                     self:BuildNicknameEntryList()
                 end
             end,
@@ -284,54 +314,55 @@ function WhoDat:BuildNicknameEntryList()
     end
 end
 
+---Checks that the user is in a party/raid and out of combat before updating nicknames on raid frames
 function WhoDat:UpdateRaidNamesIfSafe()
     if self:IsGroupedUp() and not InCombatLockdown() then
-        C_Timer.After(0.5, function()
-            self:Debug_Print("In group/raid and out of combat")
-            self:UpdateRaidNames()
-        end)
+        self:UpdateRaidNames()
     elseif self:IsGroupedUp() then
         -- Delay update until combat ends
-        self:Debug_Print("In group/raid, but currently in combat. Frame updates will trigger upon exiting.")
+        self:PrintDebugMsg("In group/raid, but currently in combat. Frame updates will trigger upon exiting.")
         self:RegisterEvent("PLAYER_REGEN_ENABLED")
     end
 end
 
+---Callback function executed when there PLAYER_REGEN_ENABLED event fires
 function WhoDat:PLAYER_REGEN_ENABLED()
     if self:IsGroupedUp() then
-        self:Debug_Print("In group/raid and exited combat")
+        self:PrintDebugMsg("In group/raid and exited combat")
         self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-        C_Timer.After(0.5, function()
-            self:UpdateRaidNames()
-        end)
+        self:UpdateRaidNames()
     end
 end
 
+---Scans all party/raid members and updates nicknames for applicable characters as needed
 function WhoDat:UpdateRaidNames()
-    self:Debug_Print("Updating party/raid nicknames")
-
-    if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
-        self:Debug_Print("|cFF00ccffCompactRaidFrameContainer |cFFc41e3aobject or |cFF00ccffApplyToFrames |cFFc41e3amethod not found|r")
-        return
-    end
-
-    CompactRaidFrameContainer:ApplyToFrames("normal", function(frame)
-        if frame and frame.unit and UnitExists(frame.unit) then
-            local unitName = UnitName(frame.unit)
-            local nickname = self:GetNicknameForCharacter(unitName)
-            
-            if nickname and frame.name:GetText() ~= nickname then
-                self:Debug_Print("Setting unitName |cFF1eff00" .. unitName .. "|r to nickname |cFFff8000" .. nickname .. "|r")
-                frame.name:SetText(nickname)
-                frame.__wd_nickname = nickname
-            end
+    C_Timer.After(0.5, function()
+        self:PrintDebugMsg("Updating party/raid nicknames")
+    
+        if not CompactRaidFrameContainer or not CompactRaidFrameContainer.ApplyToFrames then
+            self:PrintDebugMsg("CompactRaidFrameContainer or ApplyToFrames method not found")
+            return
         end
+    
+        CompactRaidFrameContainer:ApplyToFrames("normal", function(frame)
+            if frame and frame.unit and UnitExists(frame.unit) then
+                local unitName = UnitName(frame.unit)
+                local nickname = self:GetNicknameForCharacter(unitName)
+                
+                if nickname and frame.name:GetText() ~= nickname then
+                    self:PrintDebugMsg("Setting unitName", UNCOMMON_GREEN_COLOR:WrapTextInColorCode(unitName), "to nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+                    frame.name:SetText(nickname)
+                    frame.__wd_nickname = nickname
+                end
+            end
+        end)
     end)
 end
 
+---@param name string Character to fetch a nickname for
+---@return string? nickname
 function WhoDat:GetNicknameForCharacter(name)
     local nicknames = self.db.profile.nicknames
-    local result
     for nickname, chars in pairs(nicknames) do
         if chars[name] then
             return nickname
@@ -339,5 +370,5 @@ function WhoDat:GetNicknameForCharacter(name)
     end
 
     -- If a nickname can't be found, return nil
-    return
+    return nil
 end

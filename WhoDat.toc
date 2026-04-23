@@ -10,10 +10,11 @@
 ## X-Localizations: enUS
 ## X-AddOn-Provider: github
 ## X-Curse-Project-ID: 1225449
+## X-Wago-ID: nGv74rNx
 ## X-License: GNU General Public License
+## X-Last-Update: @build-date-iso@
 
 embeds.xml
 
 Locales\enUS.lua
-Locales\enGB.lua
 WhoDat.lua

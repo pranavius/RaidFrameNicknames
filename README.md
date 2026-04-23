@@ -1,6 +1,6 @@
 # WhoDat
 
-> Formerly Raid Frame Nicknames
+> Formerly *Raid Frame Nicknames*
 
 ## Summary
 **WhoDat** allows you to define a nickname for a character that will appear on their unit frame when they are in your party or raid. Multiple characters can be associated to a single nickname, so you can always tell which altoholic friend you're grouped up with regardless of what character they are playing on!

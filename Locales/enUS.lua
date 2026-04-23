@@ -1,4 +1,6 @@
-local L = LibStub("AceLocale-3.0"):NewLocale("WhoDat", "enUS", true, true)
+local addonName = ...
+---@class Locale
+local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true, true)
 if not L then return end
 
 ------------ Options ------------
@@ -15,7 +17,7 @@ L["edit"] = "Edit"
 L["delete"] = "Delete"
 L["add_to_nickname"] = "Add to Nickname"
 L["delete_nickname"] = "Delete Nickname"
-L["config_desc"] = "Open UFN options menu"
+L["config_desc"] = "Open WhoDat options menu"
 
 ------------ Debug/Chat Messages ------------
-L["no_options_menu"] = "Cannot open UFN options menu, opening general options instead"
+L["no_options_menu"] = "Cannot open WhoDat options menu, opening general options instead"
