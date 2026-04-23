@@ -28,6 +28,15 @@ Options defined below are available for each existing nickname. The **Delete Nic
 - `wd debug`: Toggles debug messages in the default chat window
   - This is the same as clicking the **Debug** checkbox in the Options window
 
+## Public API (WDUtils)
+**WhoDat** exposes a `WDUtils` object containing utility functions that allow for using some of the AddOn's capabilities in other places. As an example, users who also have the *Shadowed Unit Frames* AddOn can create a custom tag to display **WhoDat** nicknames on their SUF frames using the function `WDUtils.GetNickname`.
+
+### Get Nickname
+`WDUtils.GetNickname(character)` accepts a character name as an argument and returns the **WhoDat** nickname for that character. If one doesn't exist, the character name provided is returned instead.
+
+### Check Group Status
+`WDUtils.IsGroupedUp()` returns `true` when your character is in either a party or a raid, and `false` otherwise.
+
 ## Development
 To report any bugs or request additional features, please open a new issue in the [GitHub repository](https://github.com/pranavius/WhoDat/issues). Before doing so, please review the list of currently open issues to see if there is already one that matches yours.
 

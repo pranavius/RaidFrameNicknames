@@ -1,5 +1,5 @@
----@type string
-local addonName = ...
+---@type string, WhoDat
+local addonName, WhoDat = ...
 
 ---@class WhoDat
 WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
@@ -159,7 +159,7 @@ function WhoDat:OnInitialize()
             local unitName = UnitName(frame.unit)
             -- We only care about units in our party or raid (unit names outside our group are likely secret values anyway)
             if issecretvalue(unitName) then
-                self:PrintDebugMsg("Unit name is a secret value, ignore", unitName)
+                self:PrintDebugMsg("Secret unit name found, ignoring")
                 return
             elseif not UnitInParty(unitName) and not UnitInRaid(unitName) then
                 self:PrintDebugMsg("Unit not in party or raid, ignore", unitName)
@@ -186,7 +186,7 @@ end
 ---@param...any Arguments to print to the chat window
 function WhoDat:PrintDebugMsg(...)
     if self.db.profile.debug then
-		self:Print(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode("[Debug]"),...)
+		self:Print(HEIRLOOM_BLUE_COLOR:WrapTextInColorCode("[Debug]"), ...)
 	end
 end
 
@@ -372,3 +372,12 @@ function WhoDat:GetNicknameForCharacter(name)
     -- If a nickname can't be found, return nil
     return nil
 end
+
+WDUtils = {
+    GetNickname = function(character)
+        return WhoDat:GetNicknameForCharacter(character) or character
+    end,
+    IsGroupedUp = function()
+        return WhoDat:IsGroupedUp()
+    end
+}
