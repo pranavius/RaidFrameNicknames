@@ -5,6 +5,7 @@
 ## Author: @project-author@
 ## Version: @project-version@
 ## SavedVariables: WhoDatDB
+## OptionalDeps: Guild_Roster_Manager
 ## Category: Unit Frames
 ## X-Flavor: retail
 ## X-Localizations: enUS
@@ -17,4 +18,5 @@
 embeds.xml
 
 Locales\enUS.lua
+WhoDatGRMUtil.lua
 WhoDat.lua

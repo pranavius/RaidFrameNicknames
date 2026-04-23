@@ -2,7 +2,7 @@
 local addonName, WhoDat = ...
 
 ---@class WhoDat
-WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
+WhoDat = LibStub("AceAddon-3.0"):GetAddon(addonName, true);
 
 ---@class Locale
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
@@ -379,5 +379,9 @@ WDUtils = {
     end,
     IsGroupedUp = function()
         return WhoDat:IsGroupedUp()
+    end,
+    -- For testing only
+    _GetGRMAlts = function(character)
+        return WhoDat.GRMUtil.GetLinkedToons(character)
     end
 }
