@@ -180,6 +180,7 @@ function WhoDat:OnInitialize()
     end)
 
     self:PrintDebugMsg("Loaded")
+    self.GRMUtil:OpenDialog()
 end
 
 ---Prints text when WhoDat is in debug mode

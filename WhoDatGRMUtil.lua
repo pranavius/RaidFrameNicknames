@@ -52,4 +52,13 @@ function GRMUtil.GetLinkedToons(character)
     return searchResults
 end
 
+function GRMUtil:OpenDialog()
+    local dialog = CreateFrame("Frame", "WhoDatGRMImport", UIParent, "ButtonFrameTemplate")
+    dialog:SetPoint("CENTER")
+    dialog:SetSize(400, 300)
+    dialog:HookScript("OnLoad", function() WhoDat:Print("GRM Import Dialog") end)
+    dialog.TitleText:SetText("GRM Import")
+    dialog:SetFrameStrata("DIALOG")
+end
+
 WhoDat.GRMUtil = GRMUtil
