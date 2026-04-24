@@ -18,5 +18,5 @@
 embeds.xml
 
 Locales\enUS.lua
-WhoDatGRMUtil.lua
+WhoDat_GRMUtil.lua
 WhoDat.lua
