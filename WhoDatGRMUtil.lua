@@ -1,5 +1,6 @@
 ---@type string, WhoDat
 local addonName, WhoDat = ...
+local grmAddonName = "Guild_Roster_Manager"
 
 ---@class WhoDat
 WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
@@ -7,11 +8,17 @@ WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent
 ---@class WhoDatGRMUtil
 local GRMUtil = {}
 
----Indicates whether GRM has been loaded
----@return boolean `true` if GRM is loaded, `false` otherwise
+---Indicates whether the GRM AddOn is loaded
+---@return boolean loadingOrLoaded, boolean loaded
+function GRMUtil.IsGRMLoaded()
+    if not C_AddOns then return false, false end
+    return C_AddOns.IsAddOnLoaded(grmAddonName)
+end
+
+---Indicates whether GRM has been initialized
+---@return boolean `true` if GRM has finished initialization, `false` otherwise
 function GRMUtil.IsGRMInitialized()
-    if not C_AddOns then return false end
-    return select(2, C_AddOns.IsAddOnLoaded("Guild_Roster_Manager")) and GRM_API and GRM_API.Initialized == true
+    return select(2, GRMUtil.IsGRMLoaded()) and GRM_API and GRM_API.Initialized == true
 end
 
 ---Returns a list of all characters associated with a character in GRM
@@ -52,13 +59,125 @@ function GRMUtil.GetLinkedToons(character)
     return searchResults
 end
 
-function GRMUtil:OpenDialog()
-    local dialog = CreateFrame("Frame", "WhoDatGRMImport", UIParent, "ButtonFrameTemplate")
+function GRMUtil:CreateImportDialog()
+    -- Main import dialog
+    local dialog = CreateFrame("Frame", "WhoDatGRMImport", UIParent, "BasicFrameTemplate")
     dialog:SetPoint("CENTER")
-    dialog:SetSize(400, 300)
-    dialog:HookScript("OnLoad", function() WhoDat:Print("GRM Import Dialog") end)
-    dialog.TitleText:SetText("GRM Import")
+    dialog:SetSize(400, 200)
+    dialog.TitleText:SetText("WhoDat: GRM Import Tool")
     dialog:SetFrameStrata("DIALOG")
+    dialog:HookScript("OnHide", function(d) if d.CharacterNameInput and d.CharacterNameInput:HasFocus() then d.CharacterNameInput:ClearFocus() end end)
+    dialog:Hide()
+    -- Allows for closing the dialog when ESC is pressed
+    tinsert(UISpecialFrames, dialog:GetName())
+
+    local charInstructions = dialog:CreateFontString("CharInstructions", "OVERLAY", "GameTooltipText")
+    charInstructions:SetPoint("TOPLEFT", dialog.TopBorder, "BOTTOMLEFT", 0, -10)
+    charInstructions:SetPoint("TOPRIGHT", dialog.TopBorder, "BOTTOMRIGHT", 0, -10)
+    charInstructions:SetText("Enter the name of a character in your guild to import all associated alts/mains")
+    charInstructions:SetJustifyH("CENTER")
+    dialog.CharInstructions = charInstructions
+    
+    -- Character name input field
+    local charInput = CreateFrame("EditBox", "CharacterInput", dialog, "InputBoxTemplate")
+    charInput:SetPoint("TOP", charInstructions, "BOTTOM", 0, -5)
+    charInput:SetSize(200, 20)
+    charInput:SetAutoFocus(false)
+    charInput:HookScript("OnEscapePressed", function(inp) inp:ClearFocus() end)
+    charInput:HookScript("OnEnterPressed", function(inp) inp:ClearFocus() end)
+    
+    local nicknameInstructions = dialog:CreateFontString("NicknameInstructions", "OVERLAY", "GameTooltipText")
+    nicknameInstructions:SetPoint("TOPLEFT", charInstructions, "BOTTOMLEFT", 0, -45)
+    nicknameInstructions:SetPoint("TOPRIGHT", charInstructions, "BOTTOMRIGHT", 0, -45)
+    nicknameInstructions:SetText("Enter the nickname for the imported characters")
+    nicknameInstructions:SetJustifyH("CENTER")
+    dialog.NicknameInstructions = nicknameInstructions
+
+    -- Nickname input field
+    local nicknameInput = CreateFrame("EditBox", "NicknameInput", dialog, "InputBoxTemplate")
+    nicknameInput:SetPoint("TOP", nicknameInstructions, "BOTTOM", 0, -5)
+    nicknameInput:SetSize(200, 20)
+    nicknameInput:SetAutoFocus(false)
+    nicknameInput:HookScript("OnEscapePressed", function(inp) inp:ClearFocus() end)
+    nicknameInput:HookScript("OnEnterPressed", function(inp) inp:ClearFocus() end)
+    dialog.NicknameInput = nicknameInput
+
+    local function getInputValues()
+        return charInput:GetText(), nicknameInput:GetText()
+    end
+    
+    -- Confirmation button to import characters and update the database
+    local confirmButton = CreateFrame("Button", "ConfirmButton", dialog, "UIPanelButtonTemplate")
+    confirmButton:SetPoint("TOP", nicknameInput, "BOTTOM", 0, -15)
+    confirmButton:SetWidth(100)
+    confirmButton:SetText("Import")
+    confirmButton:Disable()
+    confirmButton:HookScript("OnEnter", function()
+        local character, nickname = getInputValues()
+        if strtrim(character) ~= "" and strtrim(nickname) ~= "" then
+            local linkedToons = GRMUtil.GetLinkedToons(character)
+            if #linkedToons > 0 then
+                GameTooltip:SetOwner(confirmButton, "ANCHOR_RIGHT")
+                GameTooltip:SetText(#linkedToons.." characters will be imported with nickname "..LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+                GameTooltip:AddLine(" ")
+                for _, toon in ipairs(linkedToons) do
+                    GameTooltip:AddLine(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(toon))
+                end
+                GameTooltip:Show()
+            end
+        end
+    end)
+    confirmButton:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    confirmButton:HookScript("OnClick", function()
+        local character, nickname = getInputValues()
+        local dbNicknames = WhoDat.db.profile.nicknames
+
+        if not dbNicknames[nickname] then
+            WhoDat:PrintDebugMsg("Adding new db nickname entry for", nickname)
+            dbNicknames[nickname] = {}
+        end
+
+        local dbNicknameGroup = dbNicknames[nickname]
+        for _, char in ipairs(GRMUtil.GetLinkedToons(character)) do
+            if not dbNicknameGroup[char] then
+                dbNicknameGroup[char] = true
+            end
+        end
+        WhoDat:Print("GRM Import is complete")
+        WhoDat:BuildNicknameEntryList()
+        dialog:Hide()
+    end)
+
+    -- Toggle between the two inputs when Tab is pressed
+    charInput:HookScript("OnTabPressed", function() nicknameInput:SetFocus() end)
+    nicknameInput:HookScript("OnTabPressed", function() charInput:SetFocus() end)
+
+    -- Determine whether the confirm button should be enabled or disabled based on input values
+    local function handleInputChanged()
+        local character, nickname = getInputValues()
+        if strtrim(character) ~= "" and strtrim(nickname) ~= "" then
+            confirmButton:Enable()
+        else
+            confirmButton:Disable()
+        end
+    end
+    charInput:HookScript("OnTextChanged", function() handleInputChanged() end)
+    nicknameInput:HookScript("OnTextChanged", function() handleInputChanged() end)
+
+    -- Clears inputs when the dialog is closed
+    dialog:HookScript("OnHide", function()
+        charInput:SetText("")
+        nicknameInput:SetText("")
+    end)
+end
+
+function GRMUtil:OpenImportDialog()
+    if not WhoDatGRMImport then
+        self:CreateImportDialog()
+        WhoDatGRMImport:Show()
+    elseif not WhoDatGRMImport:IsShown() then
+        WhoDatGRMImport:Show()
+    end
 end
 
 WhoDat.GRMUtil = GRMUtil

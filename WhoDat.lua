@@ -7,6 +7,28 @@ WhoDat = LibStub("AceAddon-3.0"):GetAddon(addonName, true);
 ---@class Locale
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 
+---Handler function for adding a new entry in the AddOn options window
+---@param character string Name of the character to associate with a nickname
+---@param nickname string Nickname to be associated with the character
+function WhoDat:HandleAddNewEntry(character, nickname)
+    if character and character ~= "" and nickname and nickname ~= "" then
+        self.db.profile.nicknames[nickname] = self.db.profile.nicknames[nickname] or {}
+        -- Avoid duplicate character names across any nicknames
+        for nickname, _ in pairs(self.db.profile.nicknames) do
+            for character, _ in pairs(self.db.profile.nicknames[nickname]) do
+                if character == character then
+                    self:Print("Character "..UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character).." is already assigned to nickname "..GOLD_FONT_COLOR:WrapTextInColorCode(nickname))
+                    return
+                end
+            end
+        end
+        self.db.profile.nicknames[nickname][character] = true
+        self:PrintAssocUpdateMessage(character, nickname, true)
+        self:BuildNicknameEntryList()
+        self:UpdateRaidNamesIfSafe()
+    end
+end
+
 ---@class AceConfig.OptionsTable
 local Options = {
     type = "group",
@@ -57,26 +79,9 @@ local Options = {
             width = "half",
             order = 6,
             func = function()
-                local newChar = strtrim(WhoDat.newChar)
-                local newName = strtrim(WhoDat.newName)
-                if newChar and newChar ~= "" and newName and newName ~= "" then
-                    WhoDat.db.profile.nicknames[newName] = WhoDat.db.profile.nicknames[newName] or {}
-                    -- Avoid duplicate character names across any nicknames
-                    for nickname, _ in pairs(WhoDat.db.profile.nicknames) do
-                        for character, _ in pairs(WhoDat.db.profile.nicknames[nickname]) do
-                            if character == newChar then
-                                WhoDat:Print("Character "..UNCOMMON_GREEN_COLOR:WrapTextInColorCode(newChar).." is already assigned to nickname "..GOLD_FONT_COLOR:WrapTextInColorCode(nickname))
-                                return
-                            end
-                        end
-                    end
-                    WhoDat.db.profile.nicknames[newName][newChar] = true
-                    WhoDat.newName = ""
-                    WhoDat.newChar = ""
-                    WhoDat:PrintAssocUpdateMessage(newChar, newName, true)
-                    WhoDat:BuildNicknameEntryList()
-                    WhoDat:UpdateRaidNamesIfSafe()
-                end
+                WhoDat:HandleAddNewEntry(WhoDat.newChar, WhoDat.newName)
+                WhoDat.newName = ""
+                WhoDat.newChar = ""
             end
         },
         spacerTwo = {
@@ -84,10 +89,24 @@ local Options = {
             name = " ",
             order = 7,
         },
+        grmImport = {
+            type = "execute",
+            name = "Import from GRM",
+            desc = "Add a nickname for multiple characters in your guild at once using GRM's database",
+            order = 8,
+            func = function() WhoDat.GRMUtil:OpenImportDialog() end,
+            hidden = function() return not WhoDat.GRMUtil.IsGRMLoaded() end
+        },
+        spacerThree = {
+            type = "description",
+            name = " ",
+            order = 9,
+            hidden = function() return not WhoDat.GRMUtil.IsGRMLoaded() end
+        },
         currentEntriesHeader = {
             type = "header",
             name = L["current_nicknames"],
-            order = 8,
+            order = 10,
         },
         -- Nickname groups are populated dynamically on initialization and after each new entry
     }
@@ -124,6 +143,23 @@ local SlashOptions = {
 	},
 }
 
+local function registerGRMSlashCommandIfLoaded()
+    if WhoDat.GRMUtil.IsGRMLoaded() then
+        WhoDat:Print("GRM detected, character import option is available")
+        ---@type AceConfig.OptionsTable
+        local importCommand = {
+            type = "execute",
+            name = "import",
+            desc = "Opens the Guild Roster Manager character import dialog",
+            func = function()
+                WhoDat.GRMUtil:OpenImportDialog()
+            end
+        }
+
+        SlashOptions.args.import = importCommand
+    end
+end
+
 ---@type string[]
 local SlashCmds = { "wd", "whodat" }
 
@@ -136,6 +172,7 @@ function WhoDat:OnInitialize()
     local config = LibStub("AceConfig-3.0")
     local registry = LibStub("AceConfigRegistry-3.0")
 
+    registerGRMSlashCommandIfLoaded()
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
     registry:RegisterOptionsTable(addonName.."Options", Options)
 	registry:RegisterOptionsTable(addonName.."Profiles", profiles)
@@ -180,7 +217,6 @@ function WhoDat:OnInitialize()
     end)
 
     self:PrintDebugMsg("Loaded")
-    self.GRMUtil:OpenDialog()
 end
 
 ---Prints text when WhoDat is in debug mode
@@ -304,11 +340,7 @@ function WhoDat:BuildNicknameEntryList()
             order = charOrder + 2,
             set = function(_, val)
                 val = strtrim(val)
-                if val ~= "" then
-                    nicknames[nickname][val] = true
-                    WhoDat:PrintAssocUpdateMessage(val, nickname, true)
-                    self:BuildNicknameEntryList()
-                end
+                self:HandleAddNewEntry(val, nickname)
             end,
             get = function() return "" end,
         }

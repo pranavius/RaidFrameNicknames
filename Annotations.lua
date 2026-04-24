@@ -3,6 +3,7 @@
 ---@class Locale: AceLocale-3.0
 
 ---@class WhoDatGRMUtil
+---@field IsGRMLoaded fun(): boolean, boolean
 ---@field IsGRMInitialized fun(): boolean
 ---@field GetLinkedToons fun(character: string): string[]
 
