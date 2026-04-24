@@ -19,3 +19,14 @@ GRM_API = {}
 ---@class GRM_R
 ---@field GetAllMembersAsArray fun(nameFilter: string): table[]
 GRM_R = {}
+
+---@class WhoDatGRMImport: Frame
+---@field TitleText FontString
+---@field TopBorder Texture
+---@field CloseButton Button
+---@field CharInstructions FontString
+---@field CharacterInput EditBox
+---@field NicknameInstructions FontString
+---@field NicknameInput EditBox
+---@field ImportButton Button
+WhoDatGRMImport = {}

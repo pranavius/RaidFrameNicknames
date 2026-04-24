@@ -8,22 +8,22 @@ WhoDat = LibStub("AceAddon-3.0"):GetAddon(addonName, true);
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 
 ---Handler function for adding a new entry in the AddOn options window
----@param character string Name of the character to associate with a nickname
----@param nickname string Nickname to be associated with the character
-function WhoDat:HandleAddNewEntry(character, nickname)
-    if character and character ~= "" and nickname and nickname ~= "" then
-        self.db.profile.nicknames[nickname] = self.db.profile.nicknames[nickname] or {}
+---@param char string Name of the character to associate with a nickname
+---@param nick string Nickname to be associated with the character
+function WhoDat:HandleAddNewEntry(char, nick)
+    if char and char ~= "" and nick and nick ~= "" then
+        self.db.profile.nicknames[nick] = self.db.profile.nicknames[nick] or {}
         -- Avoid duplicate character names across any nicknames
         for nickname, _ in pairs(self.db.profile.nicknames) do
             for character, _ in pairs(self.db.profile.nicknames[nickname]) do
-                if character == character then
+                if character == char then
                     self:Print("Character "..UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character).." is already assigned to nickname "..GOLD_FONT_COLOR:WrapTextInColorCode(nickname))
                     return
                 end
             end
         end
-        self.db.profile.nicknames[nickname][character] = true
-        self:PrintAssocUpdateMessage(character, nickname, true)
+        self.db.profile.nicknames[nick][char] = true
+        self:PrintAssocUpdateMessage(char, nick, true)
         self:BuildNicknameEntryList()
         self:UpdateRaidNamesIfSafe()
     end

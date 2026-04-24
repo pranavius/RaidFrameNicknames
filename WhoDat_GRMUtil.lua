@@ -61,6 +61,7 @@ end
 
 function GRMUtil:CreateImportDialog()
     -- Main import dialog
+    ---@class WhoDatGRMImport
     local dialog = CreateFrame("Frame", "WhoDatGRMImport", UIParent, "BasicFrameTemplate")
     dialog:SetPoint("CENTER")
     dialog:SetSize(400, 200)
@@ -71,7 +72,7 @@ function GRMUtil:CreateImportDialog()
     -- Allows for closing the dialog when ESC is pressed
     tinsert(UISpecialFrames, dialog:GetName())
 
-    local charInstructions = dialog:CreateFontString("CharInstructions", "OVERLAY", "GameTooltipText")
+    local charInstructions = dialog:CreateFontString(nil, "OVERLAY", "GameTooltipText")
     charInstructions:SetPoint("TOPLEFT", dialog.TopBorder, "BOTTOMLEFT", 0, -10)
     charInstructions:SetPoint("TOPRIGHT", dialog.TopBorder, "BOTTOMRIGHT", 0, -10)
     charInstructions:SetText("Enter the name of a character in your guild to import all associated alts/mains")
@@ -85,8 +86,9 @@ function GRMUtil:CreateImportDialog()
     charInput:SetAutoFocus(false)
     charInput:HookScript("OnEscapePressed", function(inp) inp:ClearFocus() end)
     charInput:HookScript("OnEnterPressed", function(inp) inp:ClearFocus() end)
+    dialog.CharInput = charInput
     
-    local nicknameInstructions = dialog:CreateFontString("NicknameInstructions", "OVERLAY", "GameTooltipText")
+    local nicknameInstructions = dialog:CreateFontString(nil, "OVERLAY", "GameTooltipText")
     nicknameInstructions:SetPoint("TOPLEFT", charInstructions, "BOTTOMLEFT", 0, -45)
     nicknameInstructions:SetPoint("TOPRIGHT", charInstructions, "BOTTOMRIGHT", 0, -45)
     nicknameInstructions:SetText("Enter the nickname for the imported characters")
@@ -107,7 +109,7 @@ function GRMUtil:CreateImportDialog()
     end
     
     -- Confirmation button to import characters and update the database
-    local confirmButton = CreateFrame("Button", "ConfirmButton", dialog, "UIPanelButtonTemplate")
+    local confirmButton = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
     confirmButton:SetPoint("TOP", nicknameInput, "BOTTOM", 0, -15)
     confirmButton:SetWidth(100)
     confirmButton:SetText("Import")
@@ -147,6 +149,7 @@ function GRMUtil:CreateImportDialog()
         WhoDat:BuildNicknameEntryList()
         dialog:Hide()
     end)
+    dialog.ImportButton = confirmButton
 
     -- Toggle between the two inputs when Tab is pressed
     charInput:HookScript("OnTabPressed", function() nicknameInput:SetFocus() end)
