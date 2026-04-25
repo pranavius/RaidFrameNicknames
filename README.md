@@ -1,13 +1,14 @@
 # WhoDat
 
-> Formerly *Raid Frame Nicknames*
+Formerly *Raid Frame Nicknames*
+
+[![Discord](https://img.shields.io/badge/join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/rqXW2cenWg)
+[![Patreon](https://img.shields.io/badge/support-F96854?style=for-the-badge&logo=patreon)](https://patreon.com/cw/Pranavius)
 
 ## Summary
 **WhoDat** allows you to define a nickname for a character that will appear on their unit frame when they are in your party or raid. Multiple characters can be associated to a single nickname, so you can always tell which altoholic friend you're grouped up with regardless of what character they are playing on!
 
-## Important Notes
-- A nickname will only appear for party members when you have the **Raid-Style Party Frames** option enabled
-- This AddOn is built to work with default Blizzard raid frames, so it may cause unexpected interactions if you are running any other AddOns that modify names on unit frames
+This AddOn is built to work with default Blizzard raid frames, so it may cause unexpected interactions if you are running any other AddOns that modify names on unit frames. When in a party, nicknames will only appear when you have the **Raid-Style Party Frames** option enabled.
 
 ## Usage
 You can use the options window to modify all available options. To open the options window from the Chat window, type the slash command `/wd config`.
@@ -24,8 +25,8 @@ Options defined below are available for each existing nickname. The **Delete Nic
 - **Add to Nickname**: Adds a new character to associate with the chosen nickname
 
 ### Slash Commands
-- `wd config`: Opens the Options window
-- `wd debug`: Toggles debug messages in the default chat window
+- `/wd config`: Opens the Options window
+- `/wd debug`: Toggles debug messages in the default chat window
   - This is the same as clicking the **Debug** checkbox in the Options window
 
 ## Public API (WDUtils)
@@ -37,7 +38,9 @@ Options defined below are available for each existing nickname. The **Delete Nic
 ### Check Group Status
 `WDUtils.IsGroupedUp()` returns `true` when your character is in either a party or a raid, and `false` otherwise.
 
-## Development
-To report any bugs or request additional features, please open a new issue in the [GitHub repository](https://github.com/pranavius/WhoDat/issues). Before doing so, please review the list of currently open issues to see if there is already one that matches yours.
+## Connect
+Feedback on this AddOn or any others that I develop/maintain is always welcome. If you enjoy using any of my AddOns and would like to support future development, it is greatly appreciated.
 
-If you would like to contribute to development, please clone the repository locally and open a pull request with your proposed changes.
+[![GitHub](https://img.shields.io/badge/github-000000?style=for-the-badge&logo=github)](https://github.com/pranavius)
+[![X](https://img.shields.io/badge/@PranaviusWoW-000000?style=for-the-badge&logo=x)](https://x.com/PranaviusWoW)
+[![Email](https://img.shields.io/badge/email-ffffff?style=for-the-badge&logo=gmail)](mailto:pranavius1@gmail.com)

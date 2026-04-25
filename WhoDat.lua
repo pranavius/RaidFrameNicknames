@@ -2,10 +2,35 @@
 local addonName, WhoDat = ...
 
 ---@class WhoDat
-WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
+WhoDat = LibStub("AceAddon-3.0"):GetAddon(addonName, true)
 
 ---@class Locale
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
+
+---Handler function for adding a new entry in the AddOn options window
+---@param char string Name of the character to associate with a nickname
+---@param nick string Nickname to be associated with the character
+function WhoDat:HandleAddNewEntry(char, nick)
+    if char and char ~= "" and nick and nick ~= "" then
+        self.db.profile.nicknames[nick] = self.db.profile.nicknames[nick] or {}
+        -- Avoid duplicate character names across any nicknames
+        for nickname, _ in pairs(self.db.profile.nicknames) do
+            for character, _ in pairs(self.db.profile.nicknames[nickname]) do
+                if character == char then
+                    self:Print(self.ReplacePlaceholders(L["Character {character} is already assigned to nickname {nickname}"], {
+                        character = UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character),
+                        nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
+                    }))
+                    return
+                end
+            end
+        end
+        self.db.profile.nicknames[nick][char] = true
+        self:PrintAssocUpdateMessage(char, nick, true)
+        self:BuildNicknameEntryList()
+        self:UpdateRaidNamesIfSafe()
+    end
+end
 
 ---@class AceConfig.OptionsTable
 local Options = {
@@ -14,7 +39,7 @@ local Options = {
     args = {
         usageDesc = {
             type = "description",
-            name = L["usage_desc"],
+            name = L["Add character names and assign custom nicknames for raid frames"],
             width = "full",
             order = 0,
         },
@@ -26,57 +51,40 @@ local Options = {
         },
         debug = {
             type = "toggle",
-            name = L["debug"],
-            desc= L["debug_desc"].."\n\n"..PURE_RED_COLOR:WrapTextInColorCode(L["dont_enable_warning"]),
+            name = L["Debug"],
+            desc= L["Display debugging messages in the default chat window"].."\n\n"..PURE_RED_COLOR:WrapTextInColorCode(L["You should never need to enable this"]),
             order = 2,
             get = function(item) return WhoDat.db.profile[item[#item]] end,
             set = function(item, val) WhoDat.db.profile[item[#item]] = val end
         },
         newEntryHeader = {
             type = "header",
-            name = L["add_new_entry"],
+            name = L["Add New Entry"],
             order = 3,
         },
         nicknameInput = {
             type = "input",
-            name = L["nickname"],
+            name = L["Nickname"],
             order = 4,
             get = function() return WhoDat.newName or "" end,
             set = function(_, val) WhoDat.newName = val end
         },
         characterInput = {
             type = "input",
-            name = L["char_name"],
+            name = L["Character Name"],
             order = 5,
             get = function() return WhoDat.newChar or "" end,
             set = function(_, val) WhoDat.newChar = val end
         },
         addButton = {
             type = "execute",
-            name = L["add"],
+            name = L["Add"],
             width = "half",
             order = 6,
             func = function()
-                local newChar = strtrim(WhoDat.newChar)
-                local newName = strtrim(WhoDat.newName)
-                if newChar and newChar ~= "" and newName and newName ~= "" then
-                    WhoDat.db.profile.nicknames[newName] = WhoDat.db.profile.nicknames[newName] or {}
-                    -- Avoid duplicate character names across any nicknames
-                    for nickname, _ in pairs(WhoDat.db.profile.nicknames) do
-                        for character, _ in pairs(WhoDat.db.profile.nicknames[nickname]) do
-                            if character == newChar then
-                                WhoDat:Print("Character "..UNCOMMON_GREEN_COLOR:WrapTextInColorCode(newChar).." is already assigned to nickname "..GOLD_FONT_COLOR:WrapTextInColorCode(nickname))
-                                return
-                            end
-                        end
-                    end
-                    WhoDat.db.profile.nicknames[newName][newChar] = true
-                    WhoDat.newName = ""
-                    WhoDat.newChar = ""
-                    WhoDat:PrintAssocUpdateMessage(newChar, newName, true)
-                    WhoDat:BuildNicknameEntryList()
-                    WhoDat:UpdateRaidNamesIfSafe()
-                end
+                WhoDat:HandleAddNewEntry(WhoDat.newChar, WhoDat.newName)
+                WhoDat.newName = ""
+                WhoDat.newChar = ""
             end
         },
         spacerTwo = {
@@ -84,10 +92,24 @@ local Options = {
             name = " ",
             order = 7,
         },
+        grmImport = {
+            type = "execute",
+            name = L["Import from GRM"],
+            desc = L["Add a nickname for multiple characters in your guild at once using data from Guild Roster Manager (GRM)"],
+            order = 8,
+            func = function() WhoDat.GRMUtil:OpenImportDialog() end,
+            hidden = function() return not WhoDat.GRMUtil.IsGRMLoaded() end
+        },
+        spacerThree = {
+            type = "description",
+            name = " ",
+            order = 9,
+            hidden = function() return not WhoDat.GRMUtil.IsGRMLoaded() end
+        },
         currentEntriesHeader = {
             type = "header",
-            name = L["current_nicknames"],
-            order = 8,
+            name = L["Current Nicknames"],
+            order = 10,
         },
         -- Nickname groups are populated dynamically on initialization and after each new entry
     }
@@ -111,18 +133,35 @@ local SlashOptions = {
         debug = {
             type = "toggle",
             name = "debug",
-            desc = L["debug_desc"]
+            desc = L["Display debugging messages in the default chat window"]
         },
 		config = {
 			type = "execute",
 			name = "config",
-			desc = L["config_desc"],
+			desc = L["Open WhoDat options menu"],
 			func = function()
                 Settings.OpenToCategory(WhoDat.categoryID)
             end,
 		},
 	},
 }
+
+local function registerGRMSlashCommandIfLoaded()
+    if WhoDat.GRMUtil.IsGRMLoaded() then
+        WhoDat:Print(L["GRM is loaded - character import option is available"])
+        ---@type AceConfig.OptionsTable
+        local importCommand = {
+            type = "execute",
+            name = "import",
+            desc = L["Opens the Guild Roster Manager character import dialog"],
+            func = function()
+                WhoDat.GRMUtil:OpenImportDialog()
+            end
+        }
+
+        SlashOptions.args.import = importCommand
+    end
+end
 
 ---@type string[]
 local SlashCmds = { "wd", "whodat" }
@@ -136,6 +175,7 @@ function WhoDat:OnInitialize()
     local config = LibStub("AceConfig-3.0")
     local registry = LibStub("AceConfigRegistry-3.0")
 
+    registerGRMSlashCommandIfLoaded()
 	config:RegisterOptionsTable(addonName, SlashOptions, SlashCmds)
     registry:RegisterOptionsTable(addonName.."Options", Options)
 	registry:RegisterOptionsTable(addonName.."Profiles", profiles)
@@ -196,16 +236,22 @@ end
 ---@param isAdding boolean `true` if associating a character with a nickname and `false` if disassociating
 function WhoDat:PrintAssocUpdateMessage(character, nickname, isAdding)
     if isAdding then
-        self:Print(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character), "now has nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+        self:Print(self.ReplacePlaceholders(L["Character {character} is now assigned to nickname {nickname}"], {
+            character = UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character),
+            nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
+        }))
     else
-        self:Print(GOLD_FONT_COLOR:WrapTextInColorCode(character), "no longer has nickname", LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+        self:Print(self.ReplacePlaceholders(L["Character {character} no longer has nickname {nickname}"], {
+            character = DARKYELLOW_FONT_COLOR:WrapTextInColorCode(character),
+            nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
+        }))
     end
 end
 
 ---Prints a message to the chat window when a nickname has been deleted from the AddOn configuration
 ---@param nickname string The deleted nickname
 function WhoDat:PrintNicknameDeletionMessage(nickname)
-    self:Print("Nickname", ERROR_COLOR:WrapTextInColorCode(nickname), "has been deleted")
+    self:Print(self.ReplacePlaceholders(L["Nickname {nickname} has been deleted"], { nickname = ERROR_COLOR:WrapTextInColorCode(nickname)}))
 end
 
 ---@return boolean `true` if the user is in a party or raid, `false` otherwise
@@ -250,7 +296,7 @@ function WhoDat:BuildNicknameEntryList()
             -- Delete the whole nickname
             groupArgs["deleteNickname_"..nickname] = {
             type = "execute",
-            name = L["delete_nickname"],
+            name = L["Delete Nickname"],
             order = charOrder,
             func = function()
                 nicknames[nickname] = nil
@@ -276,7 +322,7 @@ function WhoDat:BuildNicknameEntryList()
                     },
                     delete = {
                         type = "execute",
-                        name = L["delete"],
+                        name = L["Delete"],
                         desc = "Disassociate character "..character.." from "..nickname,
                         width = "half",
                         order = 2,
@@ -299,15 +345,11 @@ function WhoDat:BuildNicknameEntryList()
         -- Input to add a new character to this nickname
         groupArgs["addCharacter_"..nickname] = {
             type = "input",
-            name = L["add_to_nickname"],
+            name = L["Add to Nickname"],
             order = charOrder + 2,
             set = function(_, val)
                 val = strtrim(val)
-                if val ~= "" then
-                    nicknames[nickname][val] = true
-                    WhoDat:PrintAssocUpdateMessage(val, nickname, true)
-                    self:BuildNicknameEntryList()
-                end
+                self:HandleAddNewEntry(val, nickname)
             end,
             get = function() return "" end,
         }
@@ -379,5 +421,9 @@ WDUtils = {
     end,
     IsGroupedUp = function()
         return WhoDat:IsGroupedUp()
+    end,
+    -- For testing only
+    _GetGRMAlts = function(character)
+        return WhoDat.GRMUtil.GetLinkedToons(character)
     end
 }
