@@ -3,13 +3,26 @@ local addonName, WhoDat = ...
 local grmAddonName = "Guild_Roster_Manager"
 
 ---@class WhoDat
-WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0");
+WhoDat = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0")
+
+---@class Locale
+local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
+
+---Utility function for replacing placeholder tokens in a localized string with dynamic values
+---@param template string
+---@param tokens table
+---@return string text
+---@return number count
+function WhoDat.ReplacePlaceholders(template, tokens)
+    return template:gsub("{{%w+}}", tokens)
+end
 
 ---@class WhoDatGRMUtil
 local GRMUtil = {}
 
 ---Indicates whether the GRM AddOn is loaded
----@return boolean loadingOrLoaded, boolean loaded
+---@return boolean loadingOrLoaded
+---@return boolean loaded
 function GRMUtil.IsGRMLoaded()
     if not C_AddOns then return false, false end
     return C_AddOns.IsAddOnLoaded(grmAddonName)
@@ -27,7 +40,7 @@ end
 function GRMUtil.GetLinkedToons(character)
     -- Make sure the GRM AddOn is loaded before attempting any further action
     if not GRMUtil.IsGRMInitialized() then
-        WhoDat:Print("GRM is not yet initialized. Please try again shortly.")
+        WhoDat:Print(L["GRM is not yet initialized. Please try again soon."])
         return {}
     end
 
@@ -65,9 +78,13 @@ function GRMUtil:CreateImportDialog()
     local dialog = CreateFrame("Frame", "WhoDatGRMImport", UIParent, "BasicFrameTemplate")
     dialog:SetPoint("CENTER")
     dialog:SetSize(400, 200)
-    dialog.TitleText:SetText("WhoDat: GRM Import Tool")
+    dialog.TitleText:SetText(L["WhoDat: GRM Import Tool"])
     dialog:SetFrameStrata("DIALOG")
-    dialog:HookScript("OnHide", function(d) if d.CharacterNameInput and d.CharacterNameInput:HasFocus() then d.CharacterNameInput:ClearFocus() end end)
+    dialog:HookScript("OnHide", function(d)
+        if d.CharacterNameInput and d.CharacterNameInput:HasFocus() then
+            d.CharacterNameInput:ClearFocus()
+        end
+    end)
     dialog:Hide()
     -- Allows for closing the dialog when ESC is pressed
     tinsert(UISpecialFrames, dialog:GetName())
@@ -75,7 +92,7 @@ function GRMUtil:CreateImportDialog()
     local charInstructions = dialog:CreateFontString(nil, "OVERLAY", "GameTooltipText")
     charInstructions:SetPoint("TOPLEFT", dialog.TopBorder, "BOTTOMLEFT", 0, -10)
     charInstructions:SetPoint("TOPRIGHT", dialog.TopBorder, "BOTTOMRIGHT", 0, -10)
-    charInstructions:SetText("Enter the name of a character in your guild to import all associated alts/mains")
+    charInstructions:SetText(L["Enter the name of a character in your guild to find alts or mains for"])
     charInstructions:SetJustifyH("CENTER")
     dialog.CharInstructions = charInstructions
     
@@ -91,7 +108,7 @@ function GRMUtil:CreateImportDialog()
     local nicknameInstructions = dialog:CreateFontString(nil, "OVERLAY", "GameTooltipText")
     nicknameInstructions:SetPoint("TOPLEFT", charInstructions, "BOTTOMLEFT", 0, -45)
     nicknameInstructions:SetPoint("TOPRIGHT", charInstructions, "BOTTOMRIGHT", 0, -45)
-    nicknameInstructions:SetText("Enter the nickname for the imported characters")
+    nicknameInstructions:SetText(L["Enter a nickname for these characters"])
     nicknameInstructions:SetJustifyH("CENTER")
     dialog.NicknameInstructions = nicknameInstructions
 
@@ -104,6 +121,9 @@ function GRMUtil:CreateImportDialog()
     nicknameInput:HookScript("OnEnterPressed", function(inp) inp:ClearFocus() end)
     dialog.NicknameInput = nicknameInput
 
+    ---Helper function for fetching import dialog input values
+    ---@return string charInput
+    ---@return string nicknameInput
     local function getInputValues()
         return charInput:GetText(), nicknameInput:GetText()
     end
@@ -112,7 +132,7 @@ function GRMUtil:CreateImportDialog()
     local confirmButton = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
     confirmButton:SetPoint("TOP", nicknameInput, "BOTTOM", 0, -15)
     confirmButton:SetWidth(100)
-    confirmButton:SetText("Import")
+    confirmButton:SetText(L["Import"])
     confirmButton:Disable()
     confirmButton:HookScript("OnEnter", function()
         local character, nickname = getInputValues()
@@ -120,7 +140,10 @@ function GRMUtil:CreateImportDialog()
             local linkedToons = GRMUtil.GetLinkedToons(character)
             if #linkedToons > 0 then
                 GameTooltip:SetOwner(confirmButton, "ANCHOR_RIGHT")
-                GameTooltip:SetText(#linkedToons.." characters will be imported with nickname "..LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname))
+                GameTooltip:SetText(WhoDat.ReplacePlaceholders(L["{count} characters will be imported with nickname {nickname}"], {
+                    count = #linkedToons,
+                    nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
+                }))
                 GameTooltip:AddLine(" ")
                 for _, toon in ipairs(linkedToons) do
                     GameTooltip:AddLine(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(toon))
@@ -145,7 +168,7 @@ function GRMUtil:CreateImportDialog()
                 dbNicknameGroup[char] = true
             end
         end
-        WhoDat:Print("GRM Import is complete")
+        WhoDat:Print(L["GRM Import is complete"])
         WhoDat:BuildNicknameEntryList()
         dialog:Hide()
     end)
