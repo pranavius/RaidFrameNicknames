@@ -140,7 +140,7 @@ function GRMUtil:CreateImportDialog()
             local linkedToons = GRMUtil.GetLinkedToons(character)
             if #linkedToons > 0 then
                 GameTooltip:SetOwner(confirmButton, "ANCHOR_RIGHT")
-                GameTooltip:SetText(WhoDat.ReplacePlaceholders(L["{count} characters will be imported with nickname {nickname}"], {
+                GameTooltip:SetText(WhoDat.ReplacePlaceholders(L["{count} character(s) will be imported with nickname {nickname}"], {
                     count = #linkedToons,
                     nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
                 }))
