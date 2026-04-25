@@ -12,9 +12,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName, true)
 ---@param template string
 ---@param tokens table
 ---@return string text
----@return number count
 function WhoDat.ReplacePlaceholders(template, tokens)
-    return template:gsub("{{%w+}}", tokens)
+    return (template:gsub("{(%w+)}", tokens))
 end
 
 ---@class WhoDatGRMUtil
@@ -136,20 +135,24 @@ function GRMUtil:CreateImportDialog()
     confirmButton:Disable()
     confirmButton:HookScript("OnEnter", function()
         local character, nickname = getInputValues()
-        if strtrim(character) ~= "" and strtrim(nickname) ~= "" then
-            local linkedToons = GRMUtil.GetLinkedToons(character)
-            if #linkedToons > 0 then
-                GameTooltip:SetOwner(confirmButton, "ANCHOR_RIGHT")
-                GameTooltip:SetText(WhoDat.ReplacePlaceholders(L["{count} character(s) will be imported with nickname {nickname}"], {
-                    count = #linkedToons,
-                    nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
-                }))
-                GameTooltip:AddLine(" ")
-                for _, toon in ipairs(linkedToons) do
-                    GameTooltip:AddLine(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(toon))
-                end
-                GameTooltip:Show()
+        GameTooltip:SetOwner(confirmButton, "ANCHOR_RIGHT")
+        if not GRMUtil.IsGRMInitialized() then
+            GameTooltip:SetText(L["GRM is not yet initialized. Please try again soon."])
+            GameTooltip:Show()
+            return
+        end
+
+        local linkedToons = GRMUtil.GetLinkedToons(character)
+        if #linkedToons > 0 then
+            GameTooltip:SetText(WhoDat.ReplacePlaceholders(L["{count} character(s) will be imported with nickname {nickname}"], {
+                count = #linkedToons,
+                nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
+            }))
+            GameTooltip:AddLine(" ")
+            for _, toon in ipairs(linkedToons) do
+                GameTooltip:AddLine(UNCOMMON_GREEN_COLOR:WrapTextInColorCode(toon))
             end
+            GameTooltip:Show()
         end
     end)
     confirmButton:HookScript("OnLeave", function() GameTooltip:Hide() end)

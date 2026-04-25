@@ -17,10 +17,10 @@ function WhoDat:HandleAddNewEntry(char, nick)
         for nickname, _ in pairs(self.db.profile.nicknames) do
             for character, _ in pairs(self.db.profile.nicknames[nickname]) do
                 if character == char then
-                    self:Print(self.ReplacePlaceholders(L["Character {character} is already assigned to nickname {nickname}"]), {
+                    self:Print(self.ReplacePlaceholders(L["Character {character} is already assigned to nickname {nickname}"], {
                         character = UNCOMMON_GREEN_COLOR:WrapTextInColorCode(character),
                         nickname = LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(nickname)
-                    })
+                    }))
                     return
                 end
             end
