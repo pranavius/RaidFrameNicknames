@@ -8,7 +8,7 @@
 ## OptionalDeps: Guild_Roster_Manager
 ## Category: Unit Frames
 ## X-Flavor: retail
-## X-Localizations: enUS
+## X-Localizations: enUS deDE esES esMX frFR itIT koKR ptBR ruRU zhCN zhTW
 ## X-AddOn-Provider: github
 ## X-Curse-Project-ID: 1225449
 ## X-Wago-ID: nGv74rNx
@@ -18,5 +18,15 @@
 embeds.xml
 
 Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
 WhoDat_GRMUtil.lua
 WhoDat.lua
